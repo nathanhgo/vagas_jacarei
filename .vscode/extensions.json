@@ -1,0 +1,28 @@
+{
+  "recommendations": [
+    // Python & Django
+    "ms-python.python",
+    "ms-python.pylance",
+    "ms-python.vscode-pylance",
+    "charliermarsh.ruff",
+
+    // JavaScript / TypeScript / Next.js
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+
+    // Docker
+    "ms-azuretools.vscode-docker",
+
+    // Database
+    "cweijan.vscode-database-client2",
+
+    // General DX
+    "mikestead.dotenv",
+    "eamodio.gitlens",
+    "usernamehw.errorlens",
+    "aaron-bond.better-comments",
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-portuguese-brazilian"
+  ]
+}

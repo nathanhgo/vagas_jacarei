@@ -1,0 +1,216 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🚀 Start All (Docker)",
+      "type": "shell",
+      "command": "docker compose up",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "docker"
+      },
+      "problemMatcher": [],
+      "detail": "Inicia o banco de dados PostgreSQL e o backend Django via Docker Compose"
+    },
+    {
+      "label": "🚀 Start All Detached (Docker)",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "docker"
+      },
+      "problemMatcher": [],
+      "detail": "Inicia todos os serviços em background (detached)"
+    },
+    {
+      "label": "🛑 Stop All (Docker)",
+      "type": "shell",
+      "command": "docker compose down",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "docker"
+      },
+      "problemMatcher": [],
+      "detail": "Para e remove todos os containers Docker"
+    },
+    {
+      "label": "🗑️ Stop All + Remove Volumes (Docker)",
+      "type": "shell",
+      "command": "docker compose down -v",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "docker"
+      },
+      "problemMatcher": [],
+      "detail": "⚠️ Para os containers e apaga os volumes (dados do banco)"
+    },
+    {
+      "label": "🐘 Start DB Only",
+      "type": "shell",
+      "command": "docker compose up db",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "docker"
+      },
+      "problemMatcher": [],
+      "detail": "Inicia apenas o container do PostgreSQL"
+    },
+    {
+      "label": "🔧 Start Backend Only",
+      "type": "shell",
+      "command": "docker compose up backend",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "docker"
+      },
+      "problemMatcher": [],
+      "detail": "Inicia apenas o container do backend Django (requer DB rodando)"
+    },
+    {
+      "label": "⚡ Start Frontend (Next.js)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "frontend"
+      },
+      "problemMatcher": [],
+      "detail": "Inicia o servidor de desenvolvimento Next.js em localhost:3000"
+    },
+    {
+      "label": "🧪 Run Tests (pytest)",
+      "type": "shell",
+      "command": "docker compose exec backend pytest",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa os testes do backend com pytest dentro do container"
+    },
+    {
+      "label": "🧪 Run Tests with Coverage",
+      "type": "shell",
+      "command": "docker compose exec backend pytest --cov=. --cov-report=term-missing",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa os testes com relatório de cobertura de código"
+    },
+    {
+      "label": "🔍 Ruff Lint",
+      "type": "shell",
+      "command": "docker compose exec backend ruff check .",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "quality"
+      },
+      "problemMatcher": [],
+      "detail": "Executa o linter Ruff no código backend"
+    },
+    {
+      "label": "🔍 Ruff Format Check",
+      "type": "shell",
+      "command": "docker compose exec backend ruff format --check .",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "quality"
+      },
+      "problemMatcher": [],
+      "detail": "Verifica a formatação do código sem modificá-lo"
+    },
+    {
+      "label": "✨ Ruff Format (Fix)",
+      "type": "shell",
+      "command": "docker compose exec backend ruff format .",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "quality"
+      },
+      "problemMatcher": [],
+      "detail": "Formata automaticamente o código backend com Ruff"
+    },
+    {
+      "label": "📦 Django Migrate",
+      "type": "shell",
+      "command": "docker compose exec backend python manage.py migrate",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "django"
+      },
+      "problemMatcher": [],
+      "detail": "Executa as migrações pendentes do Django"
+    },
+    {
+      "label": "📦 Django Make Migrations",
+      "type": "shell",
+      "command": "docker compose exec backend python manage.py makemigrations",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "django"
+      },
+      "problemMatcher": [],
+      "detail": "Cria novas migrações com base nas alterações dos models"
+    },
+    {
+      "label": "👤 Django Create Superuser",
+      "type": "shell",
+      "command": "docker compose exec -it backend python manage.py createsuperuser",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "django"
+      },
+      "problemMatcher": [],
+      "detail": "Cria um superusuário para o painel admin do Django"
+    },
+    {
+      "label": "📋 Docker Logs (Backend)",
+      "type": "shell",
+      "command": "docker compose logs -f backend",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "docker"
+      },
+      "problemMatcher": [],
+      "detail": "Exibe os logs em tempo real do container backend"
+    }
+  ]
+}

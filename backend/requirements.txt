@@ -1,0 +1,22 @@
+# Web Framework
+Django==5.1.6
+djangorestframework==3.15.2
+
+# Database
+psycopg2-binary==2.9.10
+
+# CORS
+django-cors-headers==4.6.0
+
+# API Documentation (OpenAPI 3.0 + Swagger UI + ReDoc)
+drf-spectacular==0.28.0
+
+# Environment variables
+python-decouple==3.8
+
+# Linting & Formatting
+ruff==0.11.9
+
+# Testing
+pytest==8.3.5
+pytest-django==4.10.0

@@ -34,6 +34,11 @@ def _format_job_item(item):
     description = item.get("description", "")
     external_link = item.get("redirect_url", "")
     salary = item.get("salary_min", None)
+    if salary is not None:
+        try:
+            salary = float(salary) / 12
+        except (ValueError, TypeError):
+            salary = None
     created_at = item.get("created", "")
     
     extracted_text = f"{title} {description}"

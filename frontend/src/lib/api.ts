@@ -29,7 +29,6 @@ export interface Job {
   neighborhood: string | null;
   salary: string | null;
   external_link: string | null;
-  source: "local" | "indeed" | "vagas" | "adzuna";
   is_active: boolean;
   created_at: string;
 }
@@ -41,13 +40,10 @@ export interface PaginatedJobsResponse {
   results: Job[];
 }
 
-export async function fetchJobs(page: number = 1, search?: string, source?: string, pageSize: number = 6): Promise<PaginatedJobsResponse> {
+export async function fetchJobs(page: number = 1, search?: string, pageSize: number = 6): Promise<PaginatedJobsResponse> {
   let url = `${API_URL}/jobs/?page=${page}&page_size=${pageSize}`;
   if (search) {
     url += `&search=${encodeURIComponent(search)}`;
-  }
-  if (source && source !== "all") {
-    url += `&source=${encodeURIComponent(source)}`;
   }
   const response = await fetch(url, {
     method: "GET",

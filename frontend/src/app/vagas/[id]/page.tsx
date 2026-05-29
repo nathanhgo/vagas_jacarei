@@ -126,7 +126,7 @@ export default function JobDetailsPage({ params }: PageProps) {
             variant="contained"
             color="primary"
             startIcon={<ArrowBackIcon />}
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/vagas")}
             sx={{ borderRadius: 2.5, textTransform: "none", fontWeight: 700 }}
           >
             Voltar para o Início
@@ -138,7 +138,6 @@ export default function JobDetailsPage({ params }: PageProps) {
 
   const tags = [
     { label: "Bairro", value: job.neighborhood || "Não Informado", icon: <LocationCityIcon sx={{ color: "#E0876A" }} /> },
-    { label: "Local", value: job.location, icon: <LocationOnIcon sx={{ color: "#4A85B6" }} /> },
     { label: "Salário", value: job.salary ? `R$ ${Number(job.salary).toLocaleString("pt-BR")}` : "A Combinar", icon: <AttachMoneyIcon sx={{ color: "#FAB005" }} /> },
     { label: "Postado em", value: new Date(job.created_at).toLocaleDateString("pt-BR"), icon: <CalendarMonthIcon sx={{ color: "#FA5252" }} /> },
   ];
@@ -178,7 +177,7 @@ export default function JobDetailsPage({ params }: PageProps) {
         >
           {/* Back button */}
           <IconButton
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/vagas")}
             sx={{
               border: "1px solid rgba(227, 207, 192, 0.6)",
               borderRadius: 3,

@@ -4,7 +4,79 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.cache import cache
 from decouple import config
-from modules.jobs.services import JobSyncService
+
+def extract_neighborhood(text):
+    """Helper para extrair bairros conhecidos de Jacareí a partir do texto descritivo"""
+    if not text:
+        return None
+        
+    bairros = [
+        "Centro", "Villa Branca", "Jardim das Indústrias", "Jardim Santa Maria", 
+        "Parque Califórnia", "Parque dos Sinos", "Jardim Paraíba", "Jardim Flórida", 
+        "Igarapés", "Jardim Coleginho", "Cidade Salvador", "Balneário Paraíba", "São João", "Jardim America"
+    ]
+    text_lower = text.lower()
+    for bairro in bairros:
+        if bairro.lower() in text_lower:
+            return bairro
+    return None
+
+
+def _format_job_item(item):
+    """Helper para formatar o payload de vaga da Adzuna."""
+    try:
+        job_id = int(item.get("id"))
+    except (ValueError, TypeError):
+        return None
+        
+    title = item.get("title", "")
+    company = item.get("company", {}).get("display_name", "Empresa Não Informada")
+    description = item.get("description", "")
+    external_link = item.get("redirect_url", "")
+    salary = item.get("salary_min", None)
+    created_at = item.get("created", "")
+    
+    extracted_text = f"{title} {description}"
+    neighborhood = extract_neighborhood(extracted_text)
+    
+    desc_lower = (title + " " + description).lower()
+    if "estágio" in desc_lower or "estagiário" in desc_lower or "estagiária" in desc_lower:
+        type_of_contract = "INTERNSHIP"
+    elif "pj" in desc_lower or "pessoa jurídica" in desc_lower:
+        type_of_contract = "PJ"
+    elif "freelance" in desc_lower or "freelancer" in desc_lower:
+        type_of_contract = "FREELANCE"
+    elif "temporário" in desc_lower or "temporária" in desc_lower:
+        type_of_contract = "TEMPORARY"
+    elif item.get("contract_type") == "contract":
+        type_of_contract = "TEMPORARY"
+    else:
+        type_of_contract = "CLT"
+        
+    source = "adzuna"
+    if "indeed" in external_link.lower():
+        source = "indeed"
+    elif "vagas.com" in external_link.lower():
+        source = "vagas"
+        
+    return {
+        "id": job_id,
+        "title": title,
+        "company": company,
+        "type_of_contract": type_of_contract,
+        "description": description,
+        "location": "Jacareí - SP",
+        "neighborhood": neighborhood,
+        "quantity": 1,
+        "salary": salary,
+        "status": "published",
+        "external_link": external_link,
+        "ref_email": None,
+        "is_active": True,
+        "created_at": created_at,
+        "updated_at": created_at,
+        "source": source
+    }
 
 class JobListAPIView(APIView):
     def get(self, request, *args, **kwargs):
@@ -55,43 +127,10 @@ class JobListAPIView(APIView):
                 
                 formatted_jobs = []
                 for item in results:
-                    try:
-                        job_id = int(item.get("id"))
-                    except (ValueError, TypeError):
-                        continue
-                        
-                    title = item.get("title", "")
-                    company = item.get("company", {}).get("display_name", "Empresa Não Informada")
-                    description = item.get("description", "")
-                    external_link = item.get("redirect_url", "")
-                    salary = item.get("salary_min", None)
-                    created_at = item.get("created", "")
-                    
-                    extracted_text = f"{title} {description}"
-                    neighborhood = JobSyncService.extract_neighborhood(extracted_text)
-                    
-                    source = "adzuna"
-                    if "indeed" in external_link.lower():
-                        source = "indeed"
-                    elif "vagas.com" in external_link.lower():
-                        source = "vagas"
-                        
-                    job_data = {
-                        "id": job_id,
-                        "title": title,
-                        "company": company,
-                        "description": description,
-                        "external_link": external_link,
-                        "source": source,
-                        "location": "Jacareí - SP",
-                        "neighborhood": neighborhood,
-                        "salary": salary,
-                        "is_active": True,
-                        "created_at": created_at
-                    }
-                    
-                    cache.set(f"job_details_{job_id}", job_data, timeout=3600) # 1 hour TTL
-                    formatted_jobs.append(job_data)
+                    job_data = _format_job_item(item)
+                    if job_data:
+                        cache.set(f"job_details_{job_data['id']}", job_data, timeout=3600) # 1 hour TTL
+                        formatted_jobs.append(job_data)
                     
                 next_page = None
                 if page * page_size < count:
@@ -160,42 +199,8 @@ class JobDetailAPIView(APIView):
             if response.status_code == 200:
                 results = response.json().get("results", [])
                 for item in results:
-                    try:
-                        item_id = int(item.get("id"))
-                    except (ValueError, TypeError):
-                        continue
-                        
-                    if item_id == job_id:
-                        title = item.get("title", "")
-                        company = item.get("company", {}).get("display_name", "Empresa Não Informada")
-                        description = item.get("description", "")
-                        external_link = item.get("redirect_url", "")
-                        salary = item.get("salary_min", None)
-                        created_at = item.get("created", "")
-                        
-                        extracted_text = f"{title} {description}"
-                        neighborhood = JobSyncService.extract_neighborhood(extracted_text)
-                        
-                        source = "adzuna"
-                        if "indeed" in external_link.lower():
-                            source = "indeed"
-                        elif "vagas.com" in external_link.lower():
-                            source = "vagas"
-                            
-                        job_data = {
-                            "id": job_id,
-                            "title": title,
-                            "company": company,
-                            "description": description,
-                            "external_link": external_link,
-                            "source": source,
-                            "location": "Jacareí - SP",
-                            "neighborhood": neighborhood,
-                            "salary": salary,
-                            "is_active": True,
-                            "created_at": created_at
-                        }
-                        
+                    job_data = _format_job_item(item)
+                    if job_data and job_data["id"] == job_id:
                         cache.set(f"job_details_{job_id}", job_data, timeout=3600)
                         return Response(job_data)
                 

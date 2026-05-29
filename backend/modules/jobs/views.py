@@ -53,12 +53,6 @@ def _format_job_item(item):
     else:
         type_of_contract = "CLT"
         
-    source = "adzuna"
-    if "indeed" in external_link.lower():
-        source = "indeed"
-    elif "vagas.com" in external_link.lower():
-        source = "vagas"
-        
     return {
         "id": job_id,
         "title": title,
@@ -75,7 +69,6 @@ def _format_job_item(item):
         "is_active": True,
         "created_at": created_at,
         "updated_at": created_at,
-        "source": source
     }
 
 class JobListAPIView(APIView):

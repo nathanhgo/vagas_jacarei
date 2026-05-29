@@ -40,7 +40,17 @@ export default function PingStatus() {
   };
 
   useEffect(() => {
-    checkPing();
+    let active = true;
+    const trigger = async () => {
+      await Promise.resolve();
+      if (active) {
+        checkPing();
+      }
+    };
+    trigger();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const statusConfig = {
@@ -68,10 +78,10 @@ export default function PingStatus() {
           padding: "1px",
           background:
             status === "success"
-              ? "linear-gradient(135deg, #22D3A0, #4F8EF7)"
+              ? "linear-gradient(135deg, #8FBAE3, #F1A990)"
               : status === "error"
-                ? "linear-gradient(135deg, #F85149, #D29922)"
-                : "linear-gradient(135deg, #30363D, #21262D)",
+                ? "linear-gradient(135deg, #FA5252, #FAB005)"
+                : "linear-gradient(135deg, #E9ECEF, #CED4DA)",
           WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
@@ -80,14 +90,14 @@ export default function PingStatus() {
     >
       <CardContent sx={{ p: 3 }}>
         {/* Header */}
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box display="flex" alignItems="center" gap={1.5}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box
               sx={{
                 width: 40,
                 height: 40,
                 borderRadius: 2,
-                background: "linear-gradient(135deg, #4F8EF7 0%, #22D3A0 100%)",
+                background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -96,7 +106,7 @@ export default function PingStatus() {
               <WifiIcon sx={{ color: "white", fontSize: 20 }} />
             </Box>
             <Box>
-              <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                 Status da API
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -104,8 +114,8 @@ export default function PingStatus() {
               </Typography>
             </Box>
           </Box>
-
-          <Box display="flex" alignItems="center" gap={1}>
+          
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Chip
               size="small"
               label={currentConfig.label}
@@ -136,35 +146,35 @@ export default function PingStatus() {
             </Tooltip>
           </Box>
         </Box>
-
-        <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.06)" }} />
-
+        
+        <Divider sx={{ mb: 2, borderColor: "rgba(0,0,0,0.06)" }} />
+        
         {/* Content */}
         {status === "loading" && (
-          <Box display="flex" justifyContent="center" py={2}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
             <CircularProgress size={32} thickness={4} />
           </Box>
         )}
-
+        
         {status === "success" && data && (
-          <Box display="flex" flexDirection="column" gap={1.5}>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography variant="body2" color="text.secondary">
                 Mensagem
               </Typography>
-              <Typography variant="body2" fontWeight={600} fontFamily="monospace">
+              <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "monospace" }}>
                 {data.message}
               </Typography>
             </Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography variant="body2" color="text.secondary">
                 Status
               </Typography>
-              <Typography variant="body2" fontWeight={600} color="success.main">
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "success.main" }}>
                 {data.status}
               </Typography>
             </Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography variant="body2" color="text.secondary">
                 Django
               </Typography>
@@ -172,25 +182,25 @@ export default function PingStatus() {
             </Box>
           </Box>
         )}
-
+        
         {status === "error" && (
           <Box
             sx={{
-              background: "rgba(248, 81, 73, 0.08)",
-              border: "1px solid rgba(248, 81, 73, 0.2)",
+              background: "rgba(250, 82, 82, 0.05)",
+              border: "1px solid rgba(250, 82, 82, 0.2)",
               borderRadius: 2,
               p: 1.5,
             }}
           >
-            <Typography variant="body2" color="error.main" fontFamily="monospace" fontSize="0.8rem">
+            <Typography variant="body2" color="error.main" sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
               {error}
             </Typography>
           </Box>
         )}
-
+        
         {/* Footer */}
         {lastChecked && (
-          <Typography variant="caption" color="text.secondary" display="block" textAlign="right" mt={2}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "right", mt: 2 }}>
             Última verificação: {lastChecked.toLocaleTimeString("pt-BR")}
           </Typography>
         )}

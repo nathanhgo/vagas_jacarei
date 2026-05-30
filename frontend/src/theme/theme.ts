@@ -14,35 +14,35 @@ const theme = createTheme({
     fontFamily: roboto.style.fontFamily,
   },
   palette: {
-    mode: "dark",
+    mode: "light",
     primary: {
-      main: "#4F8EF7",
-      light: "#82AEFF",
-      dark: "#1A5DC4",
+      main: "#4A85B6",
+      light: "#8FBAE3",
+      dark: "#2C5E8A",
       contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#22D3A0",
-      light: "#5FFFCC",
-      dark: "#00A172",
-      contrastText: "#000000",
+      main: "#E0876A",
+      light: "#F1A990",
+      dark: "#C05C3D",
+      contrastText: "#FFFFFF",
     },
     background: {
-      default: "#0D1117",
-      paper: "#161B22",
+      default: "#FAF6F0",
+      paper: "#FFFFFF",
     },
     text: {
-      primary: "#E6EDF3",
-      secondary: "#8B949E",
+      primary: "#2A3543",
+      secondary: "#6C7D93",
     },
     error: {
-      main: "#F85149",
+      main: "#FA5252",
     },
     success: {
-      main: "#3FB950",
+      main: "#40C057",
     },
     warning: {
-      main: "#D29922",
+      main: "#FAB005",
     },
   },
   shape: {
@@ -63,7 +63,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: "none",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid rgba(227, 207, 192, 0.4)",
         },
       },
     },

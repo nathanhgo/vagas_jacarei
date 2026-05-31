@@ -71,3 +71,71 @@ export async function fetchJobById(id: number | string): Promise<Job> {
 
   return response.json() as Promise<Job>;
 }
+
+export interface CreateJobPayload {
+  title: string;
+  description: string;
+  company: string;
+  location?: string;
+  neighborhood?: string | null;
+  salary?: string | null;
+  external_link?: string | null;
+  is_active?: boolean;
+}
+
+export async function createJob(payload: CreateJobPayload): Promise<Job> {
+  const response = await fetch(`${API_URL}/jobs/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Backend returned ${response.status}: ${text}`);
+  }
+
+  return response.json() as Promise<Job>;
+}
+
+export interface Company {
+  id: number;
+  name: string;
+  description?: string | null;
+  website?: string | null;
+  city?: string | null;
+  neighborhood?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  logo_url?: string | null;
+  created_at?: string;
+}
+
+export interface CreateCompanyPayload {
+  name: string;
+  phone?: string;
+  email: string;
+  cnpj: string;
+  address?: string;
+  number?: string;
+  complement?: string;
+  cep?: string;
+  neighborhood?: string;
+  alternative_email?: string;
+  description?: string;
+}
+
+export async function createCompany(payload: CreateCompanyPayload): Promise<Company> {
+  const response = await fetch(`${API_URL}/companies/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Backend returned ${response.status}: ${text}`);
+  }
+
+  return response.json() as Promise<Company>;
+}

@@ -5,9 +5,12 @@ All environment-specific settings should go in development.py or production.py.
 
 from pathlib import Path
 
-from decouple import Csv, config
+from decouple import Csv, config, AutoConfig
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Busca o .env na raiz do projeto (um nível acima do backend)
+config = AutoConfig(search_path=BASE_DIR.parent)
 
 SECRET_KEY = config("DJANGO_SECRET_KEY")
 DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
@@ -31,6 +34,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "core",
+    "modules.companies",
     "modules.jobs",
 ]
 

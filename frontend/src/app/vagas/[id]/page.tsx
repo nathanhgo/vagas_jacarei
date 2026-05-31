@@ -13,6 +13,8 @@ import IconButton from "@mui/material/IconButton";
 import Avatar from "@mui/material/Avatar";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 
 // Icons
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -32,6 +34,7 @@ interface PageProps {
 
 export default function JobDetailsPage({ params }: PageProps) {
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   
   // Unwrapping params using React.use() as required in Next.js 15
   const unwrappedParams = use(params);
@@ -211,6 +214,7 @@ export default function JobDetailsPage({ params }: PageProps) {
 
           {/* Menu button */}
           <IconButton
+            onClick={(e) => setAnchorEl(e.currentTarget)}
             sx={{
               border: "1px solid rgba(227, 207, 192, 0.6)",
               borderRadius: 3,
@@ -221,6 +225,23 @@ export default function JobDetailsPage({ params }: PageProps) {
           >
             <MenuIcon />
           </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            <MenuItem
+              onClick={() => {
+                router.push("/empresa");
+                setAnchorEl(null);
+              }}
+              sx={{ textTransform: "none", fontWeight: 500 }}
+            >
+              Registrar Empresa
+            </MenuItem>
+          </Menu>
         </Container>
       </Box>
 

@@ -11,6 +11,7 @@ urlpatterns = [
     # API endpoints
     path("api/", include("core.urls")),
     path("api/jobs/", include("modules.jobs.urls")),
+    path("api/companies/", include("modules.companies.urls")),
 
     # --- API Documentation ---
     # Schema bruto (JSON/YAML) — usado pelo Swagger e ReDoc internamente

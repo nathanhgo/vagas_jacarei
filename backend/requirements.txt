@@ -17,6 +17,11 @@ python-decouple==3.8
 # HTTP Requests
 requests==2.32.3
 
+# Production deployment
+gunicorn==21.2.0
+whitenoise==6.6.0
+dj-database-url==2.1.0
+
 # Linting & Formatting
 ruff==0.11.9
 

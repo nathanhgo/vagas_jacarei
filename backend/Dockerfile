@@ -20,4 +20,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy project source
 COPY . .
 
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 8000
+
+CMD ["/app/entrypoint.sh"]

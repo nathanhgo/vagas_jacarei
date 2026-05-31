@@ -48,8 +48,7 @@ projeto-extensao/
 │   ├── manage.py                   # CLI do Django
 │   ├── requirements.txt            # Dependências Python (pinadas)
 │   ├── pyproject.toml              # Configuração do Ruff e pytest
-│   ├── Dockerfile                  # Imagem Python 3.12
-│   └── .env.example                # Template de variáveis de ambiente
+│   └── Dockerfile                  # Imagem Python 3.12
 │
 ├── frontend/                       # Aplicação Next.js
 │   └── src/
@@ -70,7 +69,7 @@ projeto-extensao/
 │   └── extensions.json             # Extensões VSCode recomendadas
 │
 ├── docker-compose.yml              # Orquestração dos containers
-├── .env                            # ⚠️ NUNCA commitar — variáveis reais
+├── .env                            # ⚠️ NUNCA commitar — variáveis reais (Backend e Frontend)
 ├── .env.example                    # Template público das variáveis
 ├── .gitignore
 └── README.md
@@ -99,11 +98,6 @@ Edite o `.env` e substitua `DJANGO_SECRET_KEY` por uma chave segura:
 ```bash
 # Gerar uma chave segura:
 python3 -c "import secrets; print(secrets.token_urlsafe(50))"
-```
-
-Copie o `.env` do frontend:
-```bash
-cp frontend/.env.example frontend/.env.local
 ```
 
 ### 2. Subir o banco + backend (Docker)
@@ -172,6 +166,7 @@ Acesse as tasks com `Ctrl+Shift+P → Tasks: Run Task`:
 
 | Task | O que faz |
 |------|-----------|
+| 🚀 **Start All w/ Build (Docker)** | Reconstroi as imagens e sobe os serviços (use ao alterar pacotes) |
 | 🚀 **Start All (Docker)** | Sobe o banco + backend |
 | ⚡ **Start Frontend** | Inicia o Next.js em `localhost:3000` |
 | 📋 **Docker Logs (Backend)** | Ver logs do Django em tempo real |
@@ -281,7 +276,8 @@ docker compose exec backend pytest --cov=. --cov-report=term-missing
 
 ## Variáveis de Ambiente
 
-### Raiz (`.env`)
+### Único arquivo (`.env` na raiz)
+A arquitetura do projeto foi simplificada para utilizar um único arquivo `.env` na raiz do projeto, que atende tanto ao Backend (Django) quanto ao Frontend (Next.js).
 
 | Variável | Descrição | Valor padrão (dev) |
 |----------|-----------|-------------------|
@@ -294,12 +290,9 @@ docker compose exec backend pytest --cov=. --cov-report=term-missing
 | `DJANGO_DEBUG` | Modo debug | `True` |
 | `ALLOWED_HOSTS` | Hosts permitidos | `localhost,127.0.0.1,0.0.0.0` |
 | `CORS_ALLOWED_ORIGINS` | Origins do frontend | `http://localhost:3000` |
-
-### Frontend (`frontend/.env.local`)
-
-| Variável | Valor |
-|----------|-------|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000/api` |
+| `ADZUNA_APP_ID` | API ID da Adzuna | *(seu id)* |
+| `ADZUNA_APP_KEY` | API Key da Adzuna | *(sua key)* |
+| `NEXT_PUBLIC_API_URL` | URL da API para o Frontend | `http://localhost:8000/api` |
 
 ---
 

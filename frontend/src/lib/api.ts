@@ -117,6 +117,7 @@ export interface CreateCompanyPayload {
   email: string;
   cnpj: string;
   address?: string;
+  number?: string;
   complement?: string;
   cep?: string;
   neighborhood?: string;

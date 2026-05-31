@@ -9,6 +9,7 @@ class Company(models.Model):
     email = models.EmailField(max_length=254, verbose_name="E-mail")
     cnpj = models.CharField(max_length=18, unique=True, verbose_name="CNPJ da Empresa")
     address = models.CharField(max_length=255, null=True, blank=True, verbose_name="Endereço")
+    number = models.CharField(max_length=20, null=True, blank=True, verbose_name="Número")
     complement = models.CharField(max_length=150, null=True, blank=True, verbose_name="Complemento")
     cep = models.CharField(max_length=9, null=True, blank=True, verbose_name="CEP")
     neighborhood = models.CharField(max_length=150, null=True, blank=True, verbose_name="Bairro")

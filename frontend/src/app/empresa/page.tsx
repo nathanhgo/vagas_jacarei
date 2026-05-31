@@ -23,6 +23,37 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import { createCompany } from "@/lib/api";
 
+const formatCnpj = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+    .slice(0, 18);
+};
+
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 10) {
+    return digits
+      .replace(/^(\d{2})(\d)/g, "($1) $2")
+      .replace(/(\d{4})(\d)/, "$1-$2")
+      .slice(0, 14);
+  }
+  return digits
+    .replace(/^(\d{2})(\d)/g, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+    .slice(0, 15);
+};
+
+const formatCep = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/^(\d{5})(\d)/, "$1-$2")
+    .slice(0, 9);
+};
+
 export default function EmpresaPage() {
   const router = useRouter();
 
@@ -31,6 +62,7 @@ export default function EmpresaPage() {
   const [email, setEmail] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [address, setAddress] = useState("");
+  const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
   const [cep, setCep] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -40,6 +72,25 @@ export default function EmpresaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
+
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const newCep = formatCep(e.target.value);
+    setCep(newCep);
+
+    if (newCep.length === 9) {
+      const cleanCep = newCep.replace(/\D/g, "");
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          if (data.logradouro) setAddress(data.logradouro);
+          if (data.bairro) setNeighborhood(data.bairro);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP", err);
+      }
+    }
+  };
 
   const isValidPhone = (value: string) => {
     if (!value) return true;
@@ -91,6 +142,7 @@ export default function EmpresaPage() {
         email: email.trim(),
         cnpj: cnpj.trim(),
         address: address.trim() || undefined,
+        number: number.trim() || undefined,
         complement: complement.trim() || undefined,
         cep: cep.trim() || undefined,
         neighborhood: neighborhood.trim() || undefined,
@@ -140,18 +192,20 @@ export default function EmpresaPage() {
           <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 2 }}>
             {error && <Alert severity="error">{error}</Alert>}
             <TextField label="Nome da Empresa" value={name} onChange={(e) => setName(e.target.value)} fullWidth required />
-            <TextField label="CNPJ" value={cnpj} onChange={(e) => setCnpj(e.target.value)} fullWidth required />
+            <TextField label="CNPJ" value={cnpj} onChange={(e) => setCnpj(formatCnpj(e.target.value))} fullWidth required placeholder="00.000.000/0000-00" />
 
             <TextField label="E-mail de Contato" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth required />
             <TextField label="E-mail Alternativo (opcional)" type="email" value={alternativeEmail} onChange={(e) => setAlternativeEmail(e.target.value)} fullWidth />
 
-            <TextField label="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth />
+            <TextField label="Telefone" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} fullWidth placeholder="(11) 91234-5678" />
 
+            <TextField label="CEP" value={cep} onChange={handleCepChange} fullWidth placeholder="12345-678" />
+            
             <TextField label="Endereço" value={address} onChange={(e) => setAddress(e.target.value)} fullWidth />
             <TextField label="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)} fullWidth />
 
-            <TextField label="CEP" value={cep} onChange={(e) => setCep(e.target.value)} fullWidth />
             <TextField label="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} fullWidth />
+            <TextField label="Número" value={number} onChange={(e) => setNumber(e.target.value)} fullWidth />
 
             <TextField label="Descrição (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline rows={6} />
 

@@ -54,7 +54,6 @@ class TestJobCandidacyAPIView:
             is_active=True
         )
         
-        # Simula o arquivo de currículo em PDF
         resume_file = SimpleUploadedFile("resume.pdf", b"pdf content", content_type="application/pdf")
         
         url = reverse("jobs:job-apply", kwargs={"pk": job.id})
@@ -68,10 +67,8 @@ class TestJobCandidacyAPIView:
         response = client.post(url, data=payload, format="multipart")
         assert response.status_code == 201
         
-        # Verifica persistência no banco
         assert Candidacy.objects.filter(email="joao@candidato.com").exists()
         
-        # Verifica envio do e-mail
         assert len(mail.outbox) == 1
         sent_mail = mail.outbox[0]
         assert sent_mail.to == ["rh_ref@test.com"]
@@ -94,7 +91,6 @@ class TestJobCandidacyAPIView:
             is_active=True
         )
         
-        # Simula arquivo inválido (.exe)
         resume_file = SimpleUploadedFile("script.exe", b"malicious content", content_type="application/octet-stream")
         
         url = reverse("jobs:job-apply", kwargs={"pk": job.id})

@@ -14,15 +14,9 @@ import Alert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import MenuItem from "@mui/material/MenuItem";
 import CircularProgress from "@mui/material/CircularProgress";
 import Chip from "@mui/material/Chip";
 
-// Icons
 import MenuIcon from "@mui/icons-material/Menu";
 import WorkIcon from "@mui/icons-material/Work";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
@@ -32,10 +26,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LogoutIcon from "@mui/icons-material/Logout";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import EmailIcon from "@mui/icons-material/Email";
-import PhoneIcon from "@mui/icons-material/Phone";
-import CloseIcon from "@mui/icons-material/Close";
+
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 
@@ -43,55 +34,24 @@ import {
   createCompany, 
   loginCompany, 
   fetchMyJobs, 
-  createJob, 
-  updateJob, 
   deleteJob, 
   type Company, 
   type Job 
 } from "@/lib/api";
 
-const formatCnpj = (value: string) => {
-  return value
-    .replace(/\D/g, "")
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2")
-    .slice(0, 18);
-};
-
-const formatPhone = (value: string) => {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length <= 10) {
-    return digits
-      .replace(/^(\d{2})(\d)/g, "($1) $2")
-      .replace(/(\d{4})(\d)/, "$1-$2")
-      .slice(0, 14);
-  }
-  return digits
-    .replace(/^(\d{2})(\d)/g, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2")
-    .slice(0, 15);
-};
-
-const formatCep = (value: string) => {
-  return value
-    .replace(/\D/g, "")
-    .replace(/^(\d{5})(\d)/, "$1-$2")
-    .slice(0, 9);
-};
+import { formatCnpj, formatPhone, formatCep } from "@/utils/formatters";
+import { isValidCnpj, isValidPhone, isValidCep } from "@/utils/validators";
+import CompanyProfileCard from "@/components/CompanyProfileCard";
+import CompanyJobDialog from "@/components/CompanyJobDialog";
 
 export default function EmpresaPage() {
   const router = useRouter();
 
-  // Mode state: "login" | "register"
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
-  // Logged in state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [companyData, setCompanyData] = useState<Company | null>(null);
 
-  // Registration States
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [regEmail, setRegEmail] = useState("");
@@ -104,36 +64,19 @@ export default function EmpresaPage() {
   const [regAlternativeEmail, setRegAlternativeEmail] = useState("");
   const [regDescription, setRegDescription] = useState("");
 
-  // Login States
   const [loginCnpj, setLoginCnpj] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
 
-  // Jobs States
   const [myJobs, setMyJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
 
-  // General Notification States
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Job Dialog States
   const [openJobDialog, setOpenJobDialog] = useState(false);
-  const [dialogTitleText, setDialogTitleText] = useState("Publicar Nova Vaga");
-  const [editingJobId, setEditingJobId] = useState<number | null>(null);
-  
-  // Job Form States
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [jobContract, setJobContract] = useState("CLT");
-  const [jobNeighborhood, setJobNeighborhood] = useState("");
-  const [jobSalary, setJobSalary] = useState("");
-  const [jobRefEmail, setJobRefEmail] = useState("");
-  const [jobQuantity, setJobQuantity] = useState("1");
-  const [jobSubmitting, setJobSubmitting] = useState(false);
-  const [jobError, setJobError] = useState<string | null>(null);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
 
-  // Verify storage on mount
   useEffect(() => {
     let active = true;
     const checkAuth = async () => {
@@ -216,20 +159,6 @@ export default function EmpresaPage() {
     }
   };
 
-  const isValidPhone = (value: string) => {
-    if (!value) return true;
-    return /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/.test(value.trim());
-  };
-
-  const isValidCep = (value: string) => {
-    if (!value) return true;
-    return /^\d{5}-?\d{3}$/.test(value.trim());
-  };
-
-  const isValidCnpj = (value: string) => {
-    return /^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/.test(value.trim());
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -310,73 +239,19 @@ export default function EmpresaPage() {
     }
   };
 
-  // Job Modal Handlers
   const handleOpenNewJob = () => {
-    setEditingJobId(null);
-    setDialogTitleText("Publicar Nova Vaga");
-    setJobTitle("");
-    setJobDescription("");
-    setJobContract("CLT");
-    setJobNeighborhood("");
-    setJobSalary("");
-    setJobRefEmail("");
-    setJobQuantity("1");
-    setJobError(null);
+    setEditingJob(null);
     setOpenJobDialog(true);
   };
 
   const handleOpenEditJob = (job: Job) => {
-    setEditingJobId(job.id);
-    setDialogTitleText("Editar Vaga");
-    setJobTitle(job.title);
-    setJobDescription(job.description);
-    setJobContract(job.type_of_contract || "CLT");
-    setJobNeighborhood(job.neighborhood || "");
-    setJobSalary(job.salary ? String(Math.round(Number(job.salary))) : "");
-    setJobRefEmail(job.ref_email || "");
-    setJobQuantity(job.quantity ? String(job.quantity) : "1");
-    setJobError(null);
+    setEditingJob(job);
     setOpenJobDialog(true);
   };
 
-  const handleJobSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setJobError(null);
-
-    if (!jobTitle.trim() || !jobDescription.trim()) {
-      setJobError("Cargo e Descrição da vaga são obrigatórios.");
-      return;
-    }
-
-    setJobSubmitting(true);
-    try {
-      const payload = {
-        title: jobTitle.trim(),
-        description: jobDescription.trim(),
-        type_of_contract: jobContract,
-        neighborhood: jobNeighborhood.trim() || null,
-        salary: jobSalary.trim() ? jobSalary.trim() : null,
-        ref_email: jobRefEmail.trim() || null,
-        quantity: jobQuantity.trim() ? parseInt(jobQuantity.trim()) : 1,
-      };
-
-      if (editingJobId === null) {
-        await createJob(payload);
-        setSuccessMsg("Nova vaga criada com sucesso!");
-      } else {
-        await updateJob(editingJobId, payload);
-        setSuccessMsg("Vaga atualizada com sucesso!");
-      }
-
-      setOpenJobDialog(false);
-      loadJobs();
-    } catch (err: unknown) {
-      console.error(err);
-      const errMsg = err instanceof Error ? err.message : "";
-      setJobError(errMsg || "Erro ao salvar vaga. Tente novamente.");
-    } finally {
-      setJobSubmitting(false);
-    }
+  const handleSaveSuccess = (msg: string) => {
+    setSuccessMsg(msg);
+    loadJobs();
   };
 
   const handleJobDelete = async (jobId: number) => {
@@ -392,88 +267,16 @@ export default function EmpresaPage() {
     }
   };
 
-  // Authenticated Dashboard Layout
   const renderDashboard = () => {
     if (!companyData) return null;
 
     return (
       <Container maxWidth="lg" sx={{ flex: 1, py: 6, px: 2 }}>
-        {/* Company profile summary and general info */}
         <Grid container spacing={4}>
           <Grid size={{ xs: 12, md: 4 }}>
-            <Card
-              elevation={0}
-              sx={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(227, 207, 192, 0.4)",
-                borderRadius: 4,
-                p: 3,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                gap: 2.5,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar
-                  variant="rounded"
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 2.5,
-                    background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  <LocationCityIcon sx={{ fontSize: 30 }} />
-                </Avatar>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "#2A3543", lineHeight: 1.2, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
-                    {companyData.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    CNPJ: {companyData.cnpj}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box sx={{ borderTop: "1px solid rgba(227, 207, 192, 0.3)", pt: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <EmailIcon sx={{ color: "#4A85B6", fontSize: 20 }} />
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1 }}>
-                      E-mail de Contato
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {companyData.email}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {companyData.phone && (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <PhoneIcon sx={{ color: "#E0876A", fontSize: 20 }} />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1 }}>
-                        Telefone
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {companyData.phone}
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-
-              <Box sx={{ mt: "auto", pt: 2 }}>
-                <Alert severity="success" icon={<CheckCircleIcon />} sx={{ borderRadius: 2.5 }}>
-                  Empresa registrada e ativa.
-                </Alert>
-              </Box>
-            </Card>
+            <CompanyProfileCard company={companyData} />
           </Grid>
 
-          {/* Job listings management */}
           <Grid size={{ xs: 12, md: 8 }}>
             <Card
               elevation={0}
@@ -661,7 +464,6 @@ export default function EmpresaPage() {
     );
   };
 
-  // Render Login and Register form view
   const renderAuthForms = () => {
     return (
       <Container maxWidth="md" sx={{ flex: 1, py: 6, px: 2 }}>
@@ -674,7 +476,6 @@ export default function EmpresaPage() {
             p: { xs: 3, md: 4 },
           }}
         >
-          {/* Custom Auth Tabs */}
           <Box sx={{ display: "flex", borderBottom: "1px solid rgba(227, 207, 192, 0.4)", mb: 4 }}>
             <Button
               onClick={() => {
@@ -721,7 +522,6 @@ export default function EmpresaPage() {
           )}
 
           {authMode === "login" ? (
-            // LOGIN FORM
             <Box component="form" onSubmit={handleLogin} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <Typography variant="h5" sx={{ fontWeight: 800, color: "#2A3543" }}>
                 Identificação da Empresa
@@ -775,7 +575,6 @@ export default function EmpresaPage() {
               </Button>
             </Box>
           ) : (
-            // REGISTER FORM
             <Box component="form" onSubmit={handleRegister} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <Typography variant="h5" sx={{ fontWeight: 800, color: "#2A3543" }}>
                 Nova Conta de Empresa
@@ -951,7 +750,6 @@ export default function EmpresaPage() {
         color: "text.primary",
       }}
     >
-      {/* 🚀 Header */}
       <Box
         component="header"
         sx={{
@@ -1036,209 +834,15 @@ export default function EmpresaPage() {
         </Container>
       </Box>
 
-      {/* 🚀 Main content body */}
       {isLoggedIn ? renderDashboard() : renderAuthForms()}
 
-      {/* 📋 Modal para Criar/Editar Vaga */}
-      <Dialog
+      <CompanyJobDialog
         open={openJobDialog}
-        onClose={() => !jobSubmitting && setOpenJobDialog(false)}
-        maxWidth="md"
-        fullWidth
-        scroll="paper"
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: 4,
-              p: { xs: 1, sm: 2 },
-            }
-          }
-        }}
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            borderBottom: "1px solid rgba(227, 207, 192, 0.2)",
-            pb: 1.5,
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            {dialogTitleText}
-          </Typography>
-          <IconButton onClick={() => setOpenJobDialog(false)} disabled={jobSubmitting}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </DialogTitle>
+        onClose={() => setOpenJobDialog(false)}
+        job={editingJob}
+        onSaveSuccess={handleSaveSuccess}
+      />
 
-        <form onSubmit={handleJobSubmit}>
-          <DialogContent sx={{ py: 3, px: 3 }}>
-            {jobError && (
-              <Alert severity="error" sx={{ mb: 3, borderRadius: 2.5 }}>
-                {jobError}
-              </Alert>
-            )}
-
-            <Grid container spacing={2.5}>
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  label="Cargo / Título da Vaga"
-                  placeholder="Ex: Desenvolvedor React, Auxiliar Administrativo"
-                  fullWidth
-                  required
-                  disabled={jobSubmitting}
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Tipo de Contrato"
-                  select
-                  fullWidth
-                  required
-                  disabled={jobSubmitting}
-                  value={jobContract}
-                  onChange={(e) => setJobContract(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                >
-                  <MenuItem value="CLT">CLT</MenuItem>
-                  <MenuItem value="PJ">PJ</MenuItem>
-                  <MenuItem value="FREELANCE">Freelance</MenuItem>
-                  <MenuItem value="INTERNSHIP">Estágio</MenuItem>
-                  <MenuItem value="TEMPORARY">Temporário</MenuItem>
-                </TextField>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Bairro de Jacareí"
-                  placeholder="Ex: Villa Branca, Centro, Jardim Sta Maria"
-                  fullWidth
-                  disabled={jobSubmitting}
-                  value={jobNeighborhood}
-                  onChange={(e) => setJobNeighborhood(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  label="Salário Mensal (R$)"
-                  type="number"
-                  placeholder="Ex: 2500"
-                  fullWidth
-                  disabled={jobSubmitting}
-                  value={jobSalary}
-                  onChange={(e) => setJobSalary(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  label="Quantidade de Vagas"
-                  type="number"
-                  placeholder="Ex: 1"
-                  fullWidth
-                  disabled={jobSubmitting}
-                  value={jobQuantity}
-                  onChange={(e) => setJobQuantity(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  label="E-mail de Referência do RH"
-                  type="email"
-                  placeholder="Deixe em branco para usar o geral da empresa"
-                  fullWidth
-                  disabled={jobSubmitting}
-                  value={jobRefEmail}
-                  onChange={(e) => setJobRefEmail(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  label="Descrição Completa da Vaga"
-                  placeholder="Descreva as responsabilidades, requisitos, benefícios e horários da oportunidade de emprego..."
-                  fullWidth
-                  required
-                  multiline
-                  rows={8}
-                  disabled={jobSubmitting}
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                />
-              </Grid>
-            </Grid>
-          </DialogContent>
-
-          <DialogActions sx={{ px: 3, pb: 3, gap: 1.5 }}>
-            <Button
-              variant="outlined"
-              onClick={() => setOpenJobDialog(false)}
-              disabled={jobSubmitting}
-              sx={{
-                borderRadius: 2.5,
-                textTransform: "none",
-                fontWeight: 700,
-                borderColor: "rgba(227, 207, 192, 0.8)",
-                color: "text.secondary",
-                px: 3,
-                py: 1,
-                "&:hover": {
-                  borderColor: "rgba(227, 207, 192, 1)",
-                  background: "#FAF6F0",
-                },
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={jobSubmitting}
-              sx={{
-                background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                color: "#ffffff",
-                fontWeight: 700,
-                textTransform: "none",
-                borderRadius: 2.5,
-                px: 4,
-                py: 1,
-                boxShadow: "0 8px 24px rgba(74, 133, 182, 0.2)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                  boxShadow: "0 12px 32px rgba(74, 133, 182, 0.3)",
-                },
-              }}
-            >
-              {jobSubmitting ? (
-                <CircularProgress size={20} sx={{ color: "#ffffff" }} />
-              ) : (
-                "Salvar Vaga"
-              )}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-
-      {/* Global Toast Success Notification */}
       <Snackbar
         open={successMsg !== null}
         autoHideDuration={6000}

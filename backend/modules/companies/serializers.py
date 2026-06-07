@@ -24,7 +24,25 @@ class CompanySerializer(serializers.ModelSerializer):
         required=False, allow_blank=True, validators=[cep_validator]
     )
     cnpj = serializers.CharField(validators=[cnpj_validator])
+    password = serializers.CharField(write_only=True, required=True, min_length=6)
 
     class Meta:
         model = Company
         fields = "__all__"
+        read_only_fields = ["id", "is_verified", "created_at"]
+
+    def create(self, validated_data):
+        raw_password = validated_data.pop("password")
+        company = Company(**validated_data)
+        company.set_password(raw_password)
+        company.save()
+        return company
+
+    def update(self, instance, validated_data):
+        raw_password = validated_data.pop("password", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if raw_password:
+            instance.set_password(raw_password)
+        instance.save()
+        return instance

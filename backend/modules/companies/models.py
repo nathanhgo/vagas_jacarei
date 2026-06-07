@@ -1,7 +1,7 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password
 
 
-# Create your models here.
 class Company(models.Model):
     id = models.BigAutoField(primary_key=True)
 
@@ -11,6 +11,7 @@ class Company(models.Model):
     )
     email = models.EmailField(max_length=254, verbose_name="E-mail")
     cnpj = models.CharField(max_length=18, unique=True, verbose_name="CNPJ da Empresa")
+    password = models.CharField(max_length=255, verbose_name="Senha", default="")
     address = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Endereço"
     )
@@ -40,3 +41,10 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+
+    def set_password(self, raw_password: str):
+        self.password = make_password(raw_password)
+
+    def check_password(self, raw_password: str) -> bool:
+        from django.contrib.auth.hashers import check_password
+        return check_password(raw_password, self.password)

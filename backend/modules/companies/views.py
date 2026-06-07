@@ -101,26 +101,31 @@ class CompanyDetailAPIView(APIView):
 
 class CompanyLoginAPIView(APIView):
     """
-    Endpoint simples para login de empresa usando CNPJ e E-mail de cadastro.
+    Login de empresa usando CNPJ, E-mail e Senha.
     """
 
     def post(self, request, *args, **kwargs):
         cnpj = request.data.get("cnpj", "").strip()
         email = request.data.get("email", "").strip()
+        password = request.data.get("password", "").strip()
 
-        if not cnpj or not email:
+        if not cnpj or not email or not password:
             return Response(
-                {"detail": "CNPJ e E-mail são obrigatórios."},
+                {"detail": "CNPJ, E-mail e Senha são obrigatórios."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         company = Company.objects.filter(cnpj=cnpj, email=email).first()
         if not company:
             return Response(
-                {
-                    "detail": "Empresa não encontrada com os dados informados. Verifique se o CNPJ e o E-mail estão corretos."
-                },
+                {"detail": "Empresa não encontrada com os dados informados. Verifique o CNPJ e o E-mail."},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not company.check_password(password):
+            return Response(
+                {"detail": "Senha incorreta."},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
         serializer = CompanySerializer(company)

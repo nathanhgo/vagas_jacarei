@@ -60,6 +60,8 @@ class Job(models.Model):
     ref_email = models.EmailField(
         max_length=254, null=True, blank=True, verbose_name="E-mail de Referência"
     )
+    views_count = models.IntegerField(default=0, verbose_name="Visualizações")
+    clicks_count = models.IntegerField(default=0, verbose_name="Cliques")
 
     is_active = models.BooleanField(default=True, verbose_name="Ativa")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criada em")

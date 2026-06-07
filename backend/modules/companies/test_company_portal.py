@@ -142,3 +142,56 @@ class TestCompanyPortal:
         titles = [item["title"] for item in data]
         assert "Vaga 1A" in titles
         assert "Vaga 1B" in titles
+
+    def test_list_job_candidacies_authorized(self, client):
+        from modules.jobs.models import Candidacy
+        company = Company.objects.create(
+            name="Empresa A", email="a@a.com", cnpj="11.111.111/0001-11"
+        )
+        job = Job.objects.create(
+            company=company, title="Vaga 1A", description="D", is_active=True
+        )
+        Candidacy.objects.create(
+            job=job,
+            full_name="João Candidato",
+            email="joao@candidato.com",
+            phone="12999999999",
+            resume="resumes/test.pdf",
+        )
+
+        url = reverse("jobs:job-candidacies", kwargs={"pk": job.id})
+        headers = {"HTTP_AUTHORIZATION": f"Company {company.cnpj}"}
+        response = client.get(url, **headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["full_name"] == "João Candidato"
+        assert data[0]["email"] == "joao@candidato.com"
+
+    def test_list_job_candidacies_unauthorized(self, client):
+        company = Company.objects.create(
+            name="Empresa A", email="a@a.com", cnpj="11.111.111/0001-11"
+        )
+        job = Job.objects.create(
+            company=company, title="Vaga 1A", description="D", is_active=True
+        )
+
+        url = reverse("jobs:job-candidacies", kwargs={"pk": job.id})
+        response = client.get(url)
+        assert response.status_code == 401
+
+    def test_list_job_candidacies_forbidden(self, client):
+        company1 = Company.objects.create(
+            name="Empresa A", email="a@a.com", cnpj="11.111.111/0001-11"
+        )
+        company2 = Company.objects.create(
+            name="Empresa B", email="b@b.com", cnpj="22.222.222/0001-22"
+        )
+        job = Job.objects.create(
+            company=company1, title="Vaga 1A", description="D", is_active=True
+        )
+
+        url = reverse("jobs:job-candidacies", kwargs={"pk": job.id})
+        headers = {"HTTP_AUTHORIZATION": f"Company {company2.cnpj}"}
+        response = client.get(url, **headers)
+        assert response.status_code == 403

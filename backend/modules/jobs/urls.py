@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     CompanyJobsAPIView,
+    JobCandidaciesAPIView,
     JobCandidacyAPIView,
     JobDetailAPIView,
     JobListAPIView,
@@ -14,4 +15,5 @@ urlpatterns = [
     path("my-jobs/", CompanyJobsAPIView.as_view(), name="company-jobs"),
     path("<int:pk>/", JobDetailAPIView.as_view(), name="job-detail"),
     path("<int:pk>/apply/", JobCandidacyAPIView.as_view(), name="job-apply"),
+    path("<int:pk>/candidacies/", JobCandidaciesAPIView.as_view(), name="job-candidacies"),
 ]

@@ -200,6 +200,10 @@ class JobDetailAPIView(APIView):
 
         local_job = Job.objects.filter(pk=job_id, is_active=True).first()
         if local_job:
+            from django.db.models import F
+            Job.objects.filter(pk=job_id).update(views_count=F("views_count") + 1)
+            local_job.refresh_from_db()
+
             serializer = JobSerializer(local_job)
             data = serializer.data
             data["source"] = "local"
@@ -303,10 +307,20 @@ class JobCandidacyAPIView(APIView):
         # 1. Tenta buscar a vaga local no banco
         job = get_object_or_404(Job, pk=pk, is_active=True)
 
+        from .models import Candidacy
+        email = request.data.get("email", "").strip()
+        if Candidacy.objects.filter(job=job, email=email).exists():
+            return Response(
+                {"email": ["Você já se candidatou a esta vaga com este e-mail."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # 2. Valida e salva os dados da candidatura
         serializer = CandidacySerializer(data=request.data)
         if serializer.is_valid():
             candidacy = serializer.save(job=job)
+            from django.db.models import F
+            Job.objects.filter(pk=job.id).update(clicks_count=F("clicks_count") + 1)
 
             # 3. Determina o e-mail de recebimento (ref_email da vaga ou e-mail da empresa)
             recipient_email = job.ref_email or job.company.email
@@ -353,3 +367,33 @@ class JobCandidacyAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class JobCandidaciesAPIView(APIView):
+    """
+    Lista todas as candidaturas/candidatos para uma vaga específica.
+    Apenas acessível pela empresa proprietária da vaga.
+    """
+
+    def get(self, request, pk, *args, **kwargs):
+        company = get_authenticated_company(request)
+        if not company:
+            return Response(
+                {"detail": "Não autorizado. Faça login como empresa."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        from .models import Candidacy, Job
+        from .serializers import CandidacySerializer
+
+        job = get_object_or_404(Job, pk=pk)
+
+        if job.company != company:
+            return Response(
+                {"detail": "Permissão negada. Esta vaga não pertence à sua empresa."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        queryset = Candidacy.objects.filter(job=job).order_by("-created_at")
+        serializer = CandidacySerializer(queryset, many=True)
+        return Response(serializer.data)

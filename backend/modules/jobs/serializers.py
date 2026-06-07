@@ -5,10 +5,14 @@ from .models import Candidacy, Job
 
 class JobSerializer(serializers.ModelSerializer):
     company = serializers.CharField(source="company.name", read_only=True)
+    candidacies_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Job
         fields = "__all__"
+
+    def get_candidacies_count(self, obj):
+        return obj.candidacies.count()
 
 
 class CandidacySerializer(serializers.ModelSerializer):

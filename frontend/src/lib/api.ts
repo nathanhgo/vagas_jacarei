@@ -35,6 +35,9 @@ export interface Job {
   type_of_contract?: string;
   ref_email?: string | null;
   quantity?: number | null;
+  views_count?: number;
+  clicks_count?: number;
+  candidacies_count?: number;
 }
 
 export interface PaginatedJobsResponse {
@@ -86,6 +89,7 @@ export interface CreateJobPayload {
   quantity?: number | null;
   external_link?: string | null;
   is_active?: boolean;
+  status?: string;
 }
 
 const getAuthHeaders = (): Record<string, string> => {
@@ -101,11 +105,11 @@ const getAuthHeaders = (): Record<string, string> => {
   return headers;
 };
 
-export async function loginCompany(cnpj: string, email: string): Promise<{ company: Company; token: string }> {
+export async function loginCompany(cnpj: string, email: string, password: string): Promise<{ company: Company; token: string }> {
   const response = await fetch(`${API_URL}/companies/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cnpj, email }),
+    body: JSON.stringify({ cnpj, email, password }),
   });
 
   if (!response.ok) {
@@ -122,6 +126,7 @@ export async function loginCompany(cnpj: string, email: string): Promise<{ compa
 
   return response.json() as Promise<{ company: Company; token: string }>;
 }
+
 
 export async function fetchMyJobs(): Promise<Job[]> {
   const response = await fetch(`${API_URL}/jobs/my-jobs/`, {
@@ -235,4 +240,28 @@ export async function applyToJob(id: number | string, payload: FormData): Promis
   }
 
   return response.json();
+}
+
+export interface Candidacy {
+  id: number;
+  job: number;
+  full_name: string;
+  email: string;
+  phone: string;
+  resume: string;
+  created_at: string;
+}
+
+export async function fetchCandidaciesForJob(jobId: number | string): Promise<Candidacy[]> {
+  const response = await fetch(`${API_URL}/jobs/${jobId}/candidacies/`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Erro ao carregar candidatos: ${response.statusText}`);
+  }
+
+  return response.json() as Promise<Candidacy[]>;
 }

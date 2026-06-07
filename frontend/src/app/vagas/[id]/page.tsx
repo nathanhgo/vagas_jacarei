@@ -12,11 +12,8 @@ import IconButton from "@mui/material/IconButton";
 import Avatar from "@mui/material/Avatar";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import MenuIcon from "@mui/icons-material/Menu";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -32,7 +29,7 @@ interface PageProps {
 
 export default function JobDetailsPage({ params }: PageProps) {
   const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
   const [isCompanyLoggedIn, setIsCompanyLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -49,7 +46,7 @@ export default function JobDetailsPage({ params }: PageProps) {
       active = false;
     };
   }, []);
-  
+
   const unwrappedParams = use(params);
   const jobId = unwrappedParams.id;
 
@@ -67,7 +64,7 @@ export default function JobDetailsPage({ params }: PageProps) {
     async function loadJobDetails() {
       await Promise.resolve();
       if (!active) return;
-      
+
       setLoading(true);
       setError(null);
       try {
@@ -227,7 +224,7 @@ export default function JobDetailsPage({ params }: PageProps) {
 
           <Button
             variant="outlined"
-            onClick={() => router.push("/empresa")}
+            onClick={() => router.push("/empresa/minhas-vagas")}
             startIcon={<LocationCityIcon />}
             sx={{
               borderRadius: 2.5,
@@ -239,41 +236,10 @@ export default function JobDetailsPage({ params }: PageProps) {
                 borderColor: "#4A85B6",
                 background: "#FAF6F0",
               },
-              display: { xs: "none", md: "inline-flex" }
             }}
           >
             {isCompanyLoggedIn ? "Painel da Empresa" : "Área da Empresa"}
           </Button>
-
-          <IconButton
-            onClick={(e) => setAnchorEl(e.currentTarget)}
-            sx={{
-              border: "1px solid rgba(227, 207, 192, 0.6)",
-              borderRadius: 3,
-              background: "#FFFFFF",
-              color: "text.primary",
-              "&:hover": { background: "#FAF6F0" },
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            <MenuItem
-              onClick={() => {
-                router.push("/empresa");
-                setAnchorEl(null);
-              }}
-              sx={{ textTransform: "none", fontWeight: 500 }}
-            >
-              {isCompanyLoggedIn ? "Painel da Empresa" : "Área da Empresa"}
-            </MenuItem>
-          </Menu>
         </Container>
       </Box>
 
@@ -449,6 +415,7 @@ export default function JobDetailsPage({ params }: PageProps) {
               fullWidth
               size="large"
               onClick={() => setOpenModal(true)}
+              disabled={isCompanyLoggedIn}
               sx={{
                 background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
                 color: "#ffffff",
@@ -464,9 +431,10 @@ export default function JobDetailsPage({ params }: PageProps) {
                   boxShadow: "0 12px 32px rgba(74, 133, 182, 0.35)",
                   transform: "translateY(-2px)",
                 },
+                ...(isCompanyLoggedIn && { opacity: 0.6 }),
               }}
             >
-              Candidatar-se à Vaga
+              {isCompanyLoggedIn ? "Empresas não podem se candidatar" : "Candidatar-se à Vaga"}
             </Button>
           )}
         </Box>

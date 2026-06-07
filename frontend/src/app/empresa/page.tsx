@@ -11,51 +11,53 @@ import Card from "@mui/material/Card";
 import IconButton from "@mui/material/IconButton";
 import Avatar from "@mui/material/Avatar";
 import Alert from "@mui/material/Alert";
-import Snackbar from "@mui/material/Snackbar";
 import Grid from "@mui/material/Grid";
-import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
-import Chip from "@mui/material/Chip";
+import InputAdornment from "@mui/material/InputAdornment";
 
-import MenuIcon from "@mui/icons-material/Menu";
-import WorkIcon from "@mui/icons-material/Work";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import LogoutIcon from "@mui/icons-material/Logout";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import BusinessIcon from "@mui/icons-material/Business";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-
-import { 
-  createCompany, 
-  loginCompany, 
-  fetchMyJobs, 
-  deleteJob, 
-  type Company, 
-  type Job 
-} from "@/lib/api";
-
+import { createCompany, loginCompany } from "@/lib/api";
 import { formatCnpj, formatPhone, formatCep } from "@/utils/formatters";
 import { isValidCnpj, isValidPhone, isValidCep } from "@/utils/validators";
-import CompanyProfileCard from "@/components/CompanyProfileCard";
-import CompanyJobDialog from "@/components/CompanyJobDialog";
 
-export default function EmpresaPage() {
+const inputSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 2.5,
+    background: "#FAFAFA",
+    "& fieldset": { borderColor: "rgba(227, 207, 192, 0.6)" },
+    "&:hover fieldset": { borderColor: "#8FBAE3" },
+    "&.Mui-focused fieldset": { borderColor: "#4A85B6" },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: "#4A85B6" },
+};
+
+export default function EmpresaLoginPage() {
   const router = useRouter();
 
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [companyData, setCompanyData] = useState<Company | null>(null);
+  const [loginCnpj, setLoginCnpj] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
 
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regCnpj, setRegCnpj] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regConfirmPassword, setRegConfirmPassword] = useState("");
   const [regAddress, setRegAddress] = useState("");
   const [regNumber, setRegNumber] = useState("");
   const [regComplement, setRegComplement] = useState("");
@@ -64,86 +66,18 @@ export default function EmpresaPage() {
   const [regAlternativeEmail, setRegAlternativeEmail] = useState("");
   const [regDescription, setRegDescription] = useState("");
 
-  const [loginCnpj, setLoginCnpj] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
-
-  const [myJobs, setMyJobs] = useState<Job[]>([]);
-  const [loadingJobs, setLoadingJobs] = useState(false);
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const [openJobDialog, setOpenJobDialog] = useState(false);
-  const [editingJob, setEditingJob] = useState<Job | null>(null);
-
   useEffect(() => {
-    let active = true;
-    const checkAuth = async () => {
-      await Promise.resolve();
-      if (!active) return;
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem("companyToken");
-        const dataStr = localStorage.getItem("companyData");
-        if (token && dataStr) {
-          try {
-            const company = JSON.parse(dataStr);
-            setCompanyData(company);
-            setIsLoggedIn(true);
-          } catch (err) {
-            console.error("Error parsing stored company data", err);
-            localStorage.removeItem("companyToken");
-            localStorage.removeItem("companyData");
-          }
-        }
-      }
-    };
-    checkAuth();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const loadJobs = async () => {
-    setLoadingJobs(true);
-    try {
-      const jobs = await fetchMyJobs();
-      setMyJobs(jobs);
-    } catch (err: unknown) {
-      console.error(err);
-      setError("Não foi possível carregar as vagas da empresa.");
-    } finally {
-      setLoadingJobs(false);
+    if (localStorage.getItem("companyToken")) {
+      router.replace("/empresa/minhas-vagas");
+      return;
     }
-  };
+    setMounted(true);
+  }, [router]);
 
-  useEffect(() => {
-    let active = true;
-    const fetchJobsAsync = async () => {
-      await Promise.resolve();
-      if (active && isLoggedIn) {
-        loadJobs();
-      }
-    };
-    fetchJobsAsync();
-    return () => {
-      active = false;
-    };
-  }, [isLoggedIn]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("companyToken");
-    localStorage.removeItem("companyData");
-    setIsLoggedIn(false);
-    setCompanyData(null);
-    setMyJobs([]);
-    setSuccessMsg("Sessão encerrada com sucesso.");
-  };
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const newCep = formatCep(e.target.value);
     setRegCep(newCep);
-
     if (newCep.length === 9) {
       const cleanCep = newCep.replace(/\D/g, "");
       try {
@@ -162,23 +96,21 @@ export default function EmpresaPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!loginCnpj.trim() || !loginEmail.trim()) {
-      setError("Preencha o CNPJ e o E-mail de cadastro.");
+    if (!loginCnpj.trim() || !loginEmail.trim() || !loginPassword.trim()) {
+      setError("Preencha o CNPJ, E-mail e Senha.");
       return;
     }
 
     setLoading(true);
     try {
-      const data = await loginCompany(loginCnpj.trim(), loginEmail.trim());
+      const data = await loginCompany(loginCnpj.trim(), loginEmail.trim(), loginPassword.trim());
       localStorage.setItem("companyToken", data.token);
       localStorage.setItem("companyData", JSON.stringify(data.company));
-      setCompanyData(data.company);
-      setIsLoggedIn(true);
-      setSuccessMsg(`Login efetuado! Bem-vindo, ${data.company.name}.`);
+      router.push("/empresa/minhas-vagas");
     } catch (err: unknown) {
       console.error(err);
       const errMsg = err instanceof Error ? err.message : "";
-      setError(errMsg || "CNPJ ou E-mail incorretos, ou empresa não cadastrada.");
+      setError(errMsg || "CNPJ, E-mail ou Senha incorretos.");
     } finally {
       setLoading(false);
     }
@@ -188,8 +120,8 @@ export default function EmpresaPage() {
     e.preventDefault();
     setError(null);
 
-    if (!regName.trim() || !regEmail.trim() || !regCnpj.trim()) {
-      setError("Preencha o nome da empresa, e-mail e CNPJ.");
+    if (!regName.trim() || !regEmail.trim() || !regCnpj.trim() || !regPassword.trim()) {
+      setError("Preencha o nome da empresa, e-mail, CNPJ e senha.");
       return;
     }
 
@@ -198,12 +130,22 @@ export default function EmpresaPage() {
       return;
     }
 
-    if (!isValidPhone(regPhone)) {
+    if (regPassword.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setError("As senhas não conferem.");
+      return;
+    }
+
+    if (regPhone && !isValidPhone(regPhone)) {
       setError("Telefone inválido. Exemplo: (12) 99999-9999.");
       return;
     }
 
-    if (!isValidCep(regCep)) {
+    if (regCep && !isValidCep(regCep)) {
       setError("CEP inválido. Exemplo: 12345-678.");
       return;
     }
@@ -215,6 +157,7 @@ export default function EmpresaPage() {
         phone: regPhone.trim() || undefined,
         email: regEmail.trim(),
         cnpj: regCnpj.trim(),
+        password: regPassword.trim(),
         address: regAddress.trim() || undefined,
         number: regNumber.trim() || undefined,
         complement: regComplement.trim() || undefined,
@@ -225,11 +168,9 @@ export default function EmpresaPage() {
       };
 
       const company = await createCompany(payload);
-      localStorage.setItem("companyToken", company.cnpj || regCnpj.trim());
+      localStorage.setItem("companyToken", regCnpj.trim());
       localStorage.setItem("companyData", JSON.stringify(company));
-      setCompanyData(company);
-      setIsLoggedIn(true);
-      setSuccessMsg(`Empresa cadastrada e autenticada! Bem-vindo, ${company.name}.`);
+      router.push("/empresa/minhas-vagas");
     } catch (err: unknown) {
       console.error(err);
       const errMsg = err instanceof Error ? err.message : "";
@@ -239,547 +180,63 @@ export default function EmpresaPage() {
     }
   };
 
-  const handleOpenNewJob = () => {
-    setEditingJob(null);
-    setOpenJobDialog(true);
+  const gradientBtn = {
+    background: "linear-gradient(135deg, #4A85B6 0%, #E0876A 100%)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: "1rem",
+    textTransform: "none" as const,
+    borderRadius: 3,
+    py: 1.75,
+    letterSpacing: 0.3,
+    boxShadow: "0 8px 24px rgba(74, 133, 182, 0.25)",
+    transition: "all 0.25s ease",
+    "&:hover": {
+      background: "linear-gradient(135deg, #3A75A6 0%, #D0765A 100%)",
+      boxShadow: "0 12px 32px rgba(74, 133, 182, 0.4)",
+      transform: "translateY(-1px)",
+    },
   };
 
-  const handleOpenEditJob = (job: Job) => {
-    setEditingJob(job);
-    setOpenJobDialog(true);
-  };
-
-  const handleSaveSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    loadJobs();
-  };
-
-  const handleJobDelete = async (jobId: number) => {
-    if (confirm("Tem certeza que deseja excluir esta vaga? Esta ação fará com que ela desapareça do mural de vagas.")) {
-      try {
-        await deleteJob(jobId);
-        setSuccessMsg("Vaga excluída com sucesso!");
-        loadJobs();
-      } catch (err: unknown) {
-        console.error(err);
-        setError("Não foi possível excluir a vaga.");
-      }
-    }
-  };
-
-  const renderDashboard = () => {
-    if (!companyData) return null;
-
-    return (
-      <Container maxWidth="lg" sx={{ flex: 1, py: 6, px: 2 }}>
-        <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <CompanyProfileCard company={companyData} />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 8 }}>
-            <Card
-              elevation={0}
-              sx={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(227, 207, 192, 0.4)",
-                borderRadius: 4,
-                p: { xs: 3, md: 4 },
-                minHeight: 400,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 2,
-                  mb: 4,
-                }}
-              >
-                <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 800, color: "#2A3543" }}>
-                    Minhas Vagas
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Publique e edite vagas da sua empresa no portal Jacareí Emprega.
-                  </Typography>
-                </Box>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleOpenNewJob}
-                  sx={{
-                    background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                    color: "#ffffff",
-                    fontWeight: 700,
-                    textTransform: "none",
-                    borderRadius: 2.5,
-                    px: 3,
-                    py: 1,
-                    boxShadow: "0 8px 24px rgba(74, 133, 182, 0.2)",
-                    "&:hover": {
-                      background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                      boxShadow: "0 12px 32px rgba(74, 133, 182, 0.3)",
-                    },
-                  }}
-                >
-                  Publicar Nova Vaga
-                </Button>
-              </Box>
-
-              {loadingJobs ? (
-                <Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
-                  <CircularProgress color="primary" />
-                </Box>
-              ) : myJobs.length === 0 ? (
-                <Box
-                  sx={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textAlign: "center",
-                    py: 6,
-                    px: 3,
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      width: 64,
-                      height: 64,
-                      bgcolor: "rgba(227, 207, 192, 0.15)",
-                      color: "#4A85B6",
-                      mb: 2,
-                    }}
-                  >
-                    <WorkIcon sx={{ fontSize: 32 }} />
-                  </Avatar>
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
-                    Nenhuma vaga publicada
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, mb: 3 }}>
-                    Você ainda não cadastrou nenhuma oportunidade de emprego para esta empresa. Comece agora!
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  {myJobs.map((job) => {
-                    const isPublished = job.status === "published";
-                    const isEval = job.status === "evaluation";
-                    
-                    return (
-                      <Paper
-                        key={job.id}
-                        elevation={0}
-                        sx={{
-                          p: 2.5,
-                          borderRadius: 3,
-                          background: "#FAF6F0",
-                          border: "1px solid rgba(227, 207, 192, 0.4)",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          flexWrap: { xs: "wrap", sm: "nowrap" },
-                          gap: 2,
-                        }}
-                      >
-                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1, flexWrap: "wrap" }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#2A3543" }}>
-                              {job.title}
-                            </Typography>
-                            {isPublished && (
-                              <Chip label="Publicado" size="small" color="success" sx={{ fontWeight: 700, height: 20, fontSize: "0.75rem" }} />
-                            )}
-                            {isEval && (
-                              <Chip label="Em Avaliação" size="small" color="warning" sx={{ fontWeight: 700, height: 20, fontSize: "0.75rem" }} />
-                            )}
-                            {job.status === "inactive" && (
-                              <Chip label="Pausado" size="small" variant="outlined" sx={{ fontWeight: 700, height: 20, fontSize: "0.75rem" }} />
-                            )}
-                          </Box>
-
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, color: "text.secondary" }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                              <LocationOnIcon sx={{ fontSize: 16, color: "#E0876A" }} />
-                              <Typography variant="caption">{job.neighborhood || "Jacareí (Geral)"}</Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                              <AttachMoneyIcon sx={{ fontSize: 16, color: "#FAB005" }} />
-                              <Typography variant="caption">
-                                {job.salary ? `R$ ${Number(job.salary).toLocaleString("pt-BR")}` : "A Combinar"}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                              <CalendarMonthIcon sx={{ fontSize: 16, color: "#4A85B6" }} />
-                              <Typography variant="caption">
-                                {new Date(job.created_at).toLocaleDateString("pt-BR")}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-
-                        <Box sx={{ display: "flex", gap: 1, alignSelf: { xs: "flex-end", sm: "center" } }}>
-                          <IconButton
-                            onClick={() => handleOpenEditJob(job)}
-                            sx={{
-                              border: "1px solid rgba(227, 207, 192, 0.6)",
-                              borderRadius: 2,
-                              background: "#FFFFFF",
-                              color: "#4A85B6",
-                              "&:hover": { background: "#FAF6F0" },
-                            }}
-                            title="Editar Vaga"
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => handleJobDelete(job.id)}
-                            sx={{
-                              border: "1px solid rgba(227, 207, 192, 0.6)",
-                              borderRadius: 2,
-                              background: "#FFFFFF",
-                              color: "#FA5252",
-                              "&:hover": { background: "rgba(250, 82, 82, 0.05)" },
-                            }}
-                            title="Excluir Vaga"
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Paper>
-                    );
-                  })}
-                </Box>
-              )}
-            </Card>
-          </Grid>
-        </Grid>
-      </Container>
-    );
-  };
-
-  const renderAuthForms = () => {
-    return (
-      <Container maxWidth="md" sx={{ flex: 1, py: 6, px: 2 }}>
-        <Card
-          elevation={0}
-          sx={{
-            background: "#FFFFFF",
-            border: "1px solid rgba(227, 207, 192, 0.4)",
-            borderRadius: 4,
-            p: { xs: 3, md: 4 },
-          }}
-        >
-          <Box sx={{ display: "flex", borderBottom: "1px solid rgba(227, 207, 192, 0.4)", mb: 4 }}>
-            <Button
-              onClick={() => {
-                setAuthMode("login");
-                setError(null);
-              }}
-              sx={{
-                flex: 1,
-                py: 1.5,
-                fontSize: "1rem",
-                fontWeight: authMode === "login" ? 800 : 500,
-                color: authMode === "login" ? "#4A85B6" : "text.secondary",
-                borderBottom: authMode === "login" ? "3px solid #4A85B6" : "none",
-                borderRadius: 0,
-                textTransform: "none",
-              }}
-            >
-              Acessar Painel
-            </Button>
-            <Button
-              onClick={() => {
-                setAuthMode("register");
-                setError(null);
-              }}
-              sx={{
-                flex: 1,
-                py: 1.5,
-                fontSize: "1rem",
-                fontWeight: authMode === "register" ? 800 : 500,
-                color: authMode === "register" ? "#4A85B6" : "text.secondary",
-                borderBottom: authMode === "register" ? "3px solid #4A85B6" : "none",
-                borderRadius: 0,
-                textTransform: "none",
-              }}
-            >
-              Cadastrar Empresa
-            </Button>
-          </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2.5 }}>
-              {error}
-            </Alert>
-          )}
-
-          {authMode === "login" ? (
-            <Box component="form" onSubmit={handleLogin} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: "#2A3543" }}>
-                Identificação da Empresa
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Insira o CNPJ e o E-mail cadastrados para gerenciar as vagas da sua empresa.
-              </Typography>
-
-              <TextField
-                label="CNPJ"
-                value={loginCnpj}
-                onChange={(e) => setLoginCnpj(formatCnpj(e.target.value))}
-                placeholder="00.000.000/0000-00"
-                fullWidth
-                required
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-              />
-
-              <TextField
-                label="E-mail de Cadastro"
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="empresa@contato.com"
-                fullWidth
-                required
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-              />
-
-              <Button
-                variant="contained"
-                type="submit"
-                disabled={loading}
-                sx={{
-                  background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                  color: "#ffffff",
-                  fontWeight: 700,
-                  textTransform: "none",
-                  borderRadius: 2.5,
-                  py: 1.5,
-                  boxShadow: "0 8px 24px rgba(74, 133, 182, 0.2)",
-                  "&:hover": {
-                    background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                    boxShadow: "0 12px 32px rgba(74, 133, 182, 0.3)",
-                  },
-                }}
-              >
-                {loading ? <CircularProgress size={24} sx={{ color: "#ffffff" }} /> : "Entrar no Painel"}
-              </Button>
-            </Box>
-          ) : (
-            <Box component="form" onSubmit={handleRegister} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: "#2A3543" }}>
-                Nova Conta de Empresa
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Preencha o formulário abaixo para registrar sua empresa no Posto de Atendimento ao Trabalhador de Jacareí.
-              </Typography>
-
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Nome da Empresa"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    fullWidth
-                    required
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="CNPJ"
-                    value={regCnpj}
-                    onChange={(e) => setRegCnpj(formatCnpj(e.target.value))}
-                    placeholder="00.000.000/0000-00"
-                    fullWidth
-                    required
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="E-mail principal"
-                    type="email"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="contato@empresa.com"
-                    fullWidth
-                    required
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="E-mail Alternativo (Opcional)"
-                    type="email"
-                    value={regAlternativeEmail}
-                    onChange={(e) => setRegAlternativeEmail(e.target.value)}
-                    fullWidth
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Telefone Comercial"
-                    value={regPhone}
-                    onChange={(e) => setRegPhone(formatPhone(e.target.value))}
-                    placeholder="(12) 3951-0000"
-                    fullWidth
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="CEP"
-                    value={regCep}
-                    onChange={handleCepChange}
-                    placeholder="12300-000"
-                    fullWidth
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 8 }}>
-                  <TextField
-                    label="Endereço / Logradouro"
-                    value={regAddress}
-                    onChange={(e) => setRegAddress(e.target.value)}
-                    fullWidth
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    label="Número"
-                    value={regNumber}
-                    onChange={(e) => setRegNumber(e.target.value)}
-                    fullWidth
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Bairro"
-                    value={regNeighborhood}
-                    onChange={(e) => setRegNeighborhood(e.target.value)}
-                    fullWidth
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Complemento"
-                    value={regComplement}
-                    onChange={(e) => setRegComplement(e.target.value)}
-                    fullWidth
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                  <TextField
-                    label="Descrição da Empresa (Valores, Atuação)"
-                    value={regDescription}
-                    onChange={(e) => setRegDescription(e.target.value)}
-                    fullWidth
-                    multiline
-                    rows={4}
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
-                  />
-                </Grid>
-              </Grid>
-
-              <Button
-                variant="contained"
-                type="submit"
-                disabled={loading}
-                sx={{
-                  mt: 2,
-                  background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                  color: "#ffffff",
-                  fontWeight: 700,
-                  textTransform: "none",
-                  borderRadius: 2.5,
-                  py: 1.5,
-                  boxShadow: "0 8px 24px rgba(74, 133, 182, 0.2)",
-                  "&:hover": {
-                    background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
-                    boxShadow: "0 12px 32px rgba(74, 133, 182, 0.3)",
-                  },
-                }}
-              >
-                {loading ? <CircularProgress size={24} sx={{ color: "#ffffff" }} /> : "Cadastrar Empresa"}
-              </Button>
-            </Box>
-          )}
-        </Card>
-      </Container>
-    );
-  };
+  if (!mounted) {
+    return null;
+  }
 
   return (
+
     <Box
       sx={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "linear-gradient(135deg, #FAF6F0 0%, #FFFFFF 100%)",
-        color: "text.primary",
+        background: "linear-gradient(160deg, #EEF4FB 0%, #FAF6F0 50%, #FFF8F4 100%)",
       }}
     >
+      {/* Header */}
       <Box
         component="header"
         sx={{
           borderBottom: "1px solid rgba(227, 207, 192, 0.4)",
-          background: "rgba(255, 255, 255, 0.8)",
-          backdropFilter: "blur(12px)",
+          background: "rgba(255,255,255,0.75)",
+          backdropFilter: "blur(16px)",
           position: "sticky",
           top: 0,
           zIndex: 100,
-          py: 2,
+          py: 1.5,
         }}
       >
         <Container
           maxWidth="lg"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            px: 2,
-          }}
+          sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2 }}
         >
           <IconButton
             onClick={() => router.push("/vagas")}
             sx={{
               border: "1px solid rgba(227, 207, 192, 0.6)",
-              borderRadius: 3,
+              borderRadius: 2.5,
               background: "#FFFFFF",
               color: "text.primary",
-              "&:hover": { background: "#FAF6F0" },
+              "&:hover": { background: "#FAF6F0", borderColor: "#4A85B6" },
             }}
           >
             <ArrowBackIcon />
@@ -789,70 +246,493 @@ export default function EmpresaPage() {
             <Avatar
               variant="rounded"
               sx={{
-                width: 32,
-                height: 32,
-                borderRadius: 1.5,
-                background: "rgba(227, 207, 192, 0.06)",
-                border: "1px solid rgba(227, 207, 192, 0.4)",
-                color: "#4A85B6",
+                width: 34,
+                height: 34,
+                borderRadius: 2,
+                background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
               }}
             >
-              <LocationCityIcon sx={{ fontSize: 18 }} />
+              <BusinessIcon sx={{ fontSize: 18, color: "#fff" }} />
             </Avatar>
-            <Typography variant="body1" color="text.primary" sx={{ fontWeight: 700 }}>
+            <Typography variant="body1" sx={{ fontWeight: 800, color: "#2A3543", letterSpacing: -0.2 }}>
               Portal da Empresa
             </Typography>
           </Box>
 
-          {isLoggedIn ? (
-            <IconButton
-              onClick={handleLogout}
-              sx={{
-                border: "1px solid rgba(250, 82, 82, 0.4)",
-                borderRadius: 3,
-                background: "#FFFFFF",
-                color: "#FA5252",
-                "&:hover": { background: "rgba(250, 82, 82, 0.05)" },
-              }}
-              title="Sair do Painel"
-            >
-              <LogoutIcon fontSize="small" />
-            </IconButton>
-          ) : (
-            <IconButton
-              sx={{
-                border: "1px solid rgba(227, 207, 192, 0.6)",
-                borderRadius: 3,
-                background: "#FFFFFF",
-                color: "text.primary",
-                "&:hover": { background: "#FAF6F0" },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
+          <Box sx={{ width: 40 }} />
         </Container>
       </Box>
 
-      {isLoggedIn ? renderDashboard() : renderAuthForms()}
-
-      <CompanyJobDialog
-        open={openJobDialog}
-        onClose={() => setOpenJobDialog(false)}
-        job={editingJob}
-        onSaveSuccess={handleSaveSuccess}
-      />
-
-      <Snackbar
-        open={successMsg !== null}
-        autoHideDuration={6000}
-        onClose={() => setSuccessMsg(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      {/* Hero section */}
+      <Box
+        sx={{
+          pt: { xs: 5, md: 7 },
+          pb: { xs: 2, md: 3 },
+          textAlign: "center",
+          px: 2,
+        }}
       >
-        <Alert severity="success" sx={{ width: "100%", borderRadius: 2.5 }} onClose={() => setSuccessMsg(null)}>
-          {successMsg}
-        </Alert>
-      </Snackbar>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 72,
+            height: 72,
+            borderRadius: 4,
+            background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
+            boxShadow: "0 12px 36px rgba(74,133,182,0.2)",
+            mb: 3,
+          }}
+        >
+          <LockOutlinedIcon sx={{ fontSize: 34, color: "#fff" }} />
+        </Box>
+        <Typography
+          variant="h3"
+          sx={{
+            fontWeight: 900,
+            letterSpacing: -1,
+            fontSize: { xs: "1.9rem", md: "2.6rem" },
+            background: "linear-gradient(135deg, #2A3543 30%, #4A85B6 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            mb: 1,
+          }}
+        >
+          {authMode === "login" ? "Acesse sua conta" : "Cadastre sua empresa"}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480, mx: "auto" }}>
+          {authMode === "login"
+            ? "Entre com CNPJ, e-mail e senha para gerenciar suas vagas no PAT Jacareí."
+            : "Registre sua empresa gratuitamente e publique vagas para candidatos da região."}
+        </Typography>
+      </Box>
+
+      {/* Form card */}
+      <Container maxWidth="sm" sx={{ flex: 1, py: 3, px: 2 }}>
+
+        {/* Tab switcher */}
+        <Box
+          sx={{
+            display: "flex",
+            background: "rgba(255,255,255,0.8)",
+            border: "1px solid rgba(227, 207, 192, 0.5)",
+            borderRadius: 3,
+            p: 0.5,
+            mb: 3,
+          }}
+        >
+          {(["login", "register"] as const).map((mode) => (
+            <Button
+              key={mode}
+              onClick={() => { setAuthMode(mode); setError(null); }}
+              fullWidth
+              sx={{
+                borderRadius: 2.5,
+                py: 1.2,
+                fontWeight: authMode === mode ? 800 : 500,
+                fontSize: "0.95rem",
+                textTransform: "none",
+                transition: "all 0.2s ease",
+                background: authMode === mode
+                  ? "linear-gradient(135deg, #4A85B6 0%, #E0876A 100%)"
+                  : "transparent",
+                color: authMode === mode ? "#fff" : "text.secondary",
+                boxShadow: authMode === mode ? "0 4px 12px rgba(74,133,182,0.25)" : "none",
+                "&:hover": {
+                  background: authMode === mode
+                    ? "linear-gradient(135deg, #4A85B6 0%, #E0876A 100%)"
+                    : "rgba(227,207,192,0.2)",
+                },
+              }}
+            >
+              {mode === "login" ? "Entrar" : "Criar Conta"}
+            </Button>
+          ))}
+        </Box>
+
+        <Card
+          elevation={0}
+          sx={{
+            background: "rgba(255,255,255,0.9)",
+            border: "1px solid rgba(227, 207, 192, 0.4)",
+            borderRadius: 4,
+            p: { xs: 3, md: 4 },
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 8px 40px rgba(74,133,182,0.06)",
+          }}
+        >
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: 2.5,
+                border: "1px solid rgba(250,82,82,0.2)",
+                background: "rgba(250,82,82,0.05)",
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          {/* LOGIN FORM */}
+          {authMode === "login" ? (
+            <Box component="form" onSubmit={handleLogin} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <TextField
+                id="login-cnpj"
+                label="CNPJ"
+                value={loginCnpj}
+                onChange={(e) => setLoginCnpj(formatCnpj(e.target.value))}
+                placeholder="00.000.000/0000-00"
+                fullWidth
+                required
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <BadgeOutlinedIcon sx={{ color: "#8FBAE3", fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={inputSx}
+              />
+
+              <TextField
+                id="login-email"
+                label="E-mail"
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="empresa@contato.com"
+                fullWidth
+                required
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationCityIcon sx={{ color: "#8FBAE3", fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={inputSx}
+              />
+
+              <TextField
+                id="login-password"
+                label="Senha"
+                type={showPassword ? "text" : "password"}
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••"
+                fullWidth
+                required
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockOutlinedIcon sx={{ color: "#8FBAE3", fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((v) => !v)}
+                          edge="end"
+                          size="small"
+                        >
+                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={inputSx}
+              />
+
+              <Button
+                variant="contained"
+                type="submit"
+                disabled={loading}
+                fullWidth
+                sx={gradientBtn}
+              >
+                {loading ? <CircularProgress size={24} sx={{ color: "#ffffff" }} /> : "Entrar no Painel"}
+              </Button>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ textAlign: "center", mt: 0.5 }}
+              >
+                Não tem conta?{" "}
+                <Box
+                  component="span"
+                  onClick={() => { setAuthMode("register"); setError(null); }}
+                  sx={{ color: "#4A85B6", fontWeight: 700, cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+                >
+                  Cadastre sua empresa
+                </Box>
+              </Typography>
+            </Box>
+          ) : (
+            /* REGISTER FORM */
+            <Box component="form" onSubmit={handleRegister} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#2A3543", mb: -0.5 }}>
+                Dados da Empresa
+              </Typography>
+
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    id="reg-name"
+                    label="Nome da Empresa"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    fullWidth
+                    required
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    sx={inputSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    id="reg-cnpj"
+                    label="CNPJ"
+                    value={regCnpj}
+                    onChange={(e) => setRegCnpj(formatCnpj(e.target.value))}
+                    placeholder="00.000.000/0000-00"
+                    fullWidth
+                    required
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    sx={inputSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    id="reg-email"
+                    label="E-mail"
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="contato@empresa.com"
+                    fullWidth
+                    required
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    sx={inputSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    id="reg-phone"
+                    label="Telefone"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(formatPhone(e.target.value))}
+                    placeholder="(12) 99999-9999"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    sx={inputSx}
+                  />
+                </Grid>
+              </Grid>
+
+              <Box sx={{ mt: 0.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#2A3543", mb: 1.5 }}>
+                  Senha de Acesso
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      id="reg-password"
+                      label="Senha"
+                      type={showPassword ? "text" : "password"}
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      fullWidth
+                      required
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" size="small">
+                                {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      id="reg-confirm-password"
+                      label="Confirmar Senha"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={regConfirmPassword}
+                      onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      placeholder="Repita a senha"
+                      fullWidth
+                      required
+                      error={regConfirmPassword.length > 0 && regPassword !== regConfirmPassword}
+                      helperText={regConfirmPassword.length > 0 && regPassword !== regConfirmPassword ? "Senhas não conferem" : ""}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton onClick={() => setShowConfirmPassword((v) => !v)} edge="end" size="small">
+                                {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Box sx={{ mt: 0.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#2A3543", mb: 1.5 }}>
+                  Endereço <Typography component="span" variant="caption" color="text.secondary">(opcional)</Typography>
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      id="reg-cep"
+                      label="CEP"
+                      value={regCep}
+                      onChange={handleCepChange}
+                      placeholder="12345-678"
+                      fullWidth
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 5 }}>
+                    <TextField
+                      id="reg-address"
+                      label="Endereço"
+                      value={regAddress}
+                      onChange={(e) => setRegAddress(e.target.value)}
+                      placeholder="Rua, Avenida..."
+                      fullWidth
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <TextField
+                      id="reg-number"
+                      label="Número"
+                      value={regNumber}
+                      onChange={(e) => setRegNumber(e.target.value)}
+                      placeholder="Ex: 123"
+                      fullWidth
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      id="reg-neighborhood"
+                      label="Bairro"
+                      value={regNeighborhood}
+                      onChange={(e) => setRegNeighborhood(e.target.value)}
+                      placeholder="Ex: Centro"
+                      fullWidth
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      id="reg-complement"
+                      label="Complemento"
+                      value={regComplement}
+                      onChange={(e) => setRegComplement(e.target.value)}
+                      placeholder="Ex: Bloco A, Sala 4"
+                      fullWidth
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      id="reg-alt-email"
+                      label="E-mail Alternativo"
+                      type="email"
+                      value={regAlternativeEmail}
+                      onChange={(e) => setRegAlternativeEmail(e.target.value)}
+                      placeholder="rh@empresa.com"
+                      fullWidth
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      id="reg-description"
+                      label="Descrição da Empresa"
+                      value={regDescription}
+                      onChange={(e) => setRegDescription(e.target.value)}
+                      placeholder="Fale um pouco sobre o segmento da empresa..."
+                      fullWidth
+                      multiline
+                      rows={3}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      sx={inputSx}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Button
+                variant="contained"
+                type="submit"
+                disabled={loading}
+                fullWidth
+                sx={{ ...gradientBtn, mt: 0.5 }}
+              >
+                {loading ? <CircularProgress size={24} sx={{ color: "#ffffff" }} /> : "Cadastrar Empresa"}
+              </Button>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ textAlign: "center", mt: 0.5 }}
+              >
+                Já tem conta?{" "}
+                <Box
+                  component="span"
+                  onClick={() => { setAuthMode("login"); setError(null); }}
+                  sx={{ color: "#4A85B6", fontWeight: 700, cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+                >
+                  Fazer login
+                </Box>
+              </Typography>
+            </Box>
+          )}
+        </Card>
+
+        {/* Footer note */}
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", textAlign: "center", mt: 3, mb: 4, opacity: 0.7 }}
+        >
+          PAT Jacareí · Posto de Atendimento ao Trabalhador
+        </Typography>
+      </Container>
     </Box>
   );
 }

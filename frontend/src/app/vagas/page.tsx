@@ -32,6 +32,22 @@ import { useRouter } from "next/navigation";
 export default function VagasPage() {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isCompanyLoggedIn, setIsCompanyLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const checkToken = async () => {
+      await Promise.resolve();
+      if (active && typeof window !== "undefined") {
+        const token = localStorage.getItem("companyToken");
+        setIsCompanyLoggedIn(!!token);
+      }
+    };
+    checkToken();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // State variables for CSR
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -198,6 +214,27 @@ export default function VagasPage() {
             />
           </Box>
 
+          {/* Direct Link to Company Area */}
+          <Button
+            variant="outlined"
+            onClick={() => router.push("/empresa")}
+            startIcon={<LocationCityIcon />}
+            sx={{
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontWeight: 700,
+              borderColor: "rgba(227, 207, 192, 0.8)",
+              color: "text.primary",
+              "&:hover": {
+                borderColor: "#4A85B6",
+                background: "#FAF6F0",
+              },
+              display: { xs: "none", md: "inline-flex" }
+            }}
+          >
+            {isCompanyLoggedIn ? "Painel da Empresa" : "Área da Empresa"}
+          </Button>
+
           {/* Menu Button */}
           <IconButton
             onClick={(e) => setAnchorEl(e.currentTarget)}
@@ -225,7 +262,7 @@ export default function VagasPage() {
               }}
               sx={{ textTransform: "none", fontWeight: 500 }}
             >
-              Registrar Empresa
+              {isCompanyLoggedIn ? "Painel da Empresa" : "Área da Empresa"}
             </MenuItem>
           </Menu>
         </Container>

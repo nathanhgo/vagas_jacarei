@@ -10,3 +10,6 @@ DEBUG = True
 
 # Django Debug Toolbar can be added here when needed
 INTERNAL_IPS = ["127.0.0.1"]
+
+# Log sent emails to console during development
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

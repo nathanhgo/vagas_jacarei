@@ -31,6 +31,10 @@ export interface Job {
   external_link: string | null;
   is_active: boolean;
   created_at: string;
+  status?: string;
+  type_of_contract?: string;
+  ref_email?: string | null;
+  quantity?: number | null;
 }
 
 export interface PaginatedJobsResponse {
@@ -75,27 +79,104 @@ export async function fetchJobById(id: number | string): Promise<Job> {
 export interface CreateJobPayload {
   title: string;
   description: string;
-  company: string;
-  location?: string;
+  type_of_contract?: string;
   neighborhood?: string | null;
   salary?: string | null;
+  ref_email?: string | null;
+  quantity?: number | null;
   external_link?: string | null;
   is_active?: boolean;
+}
+
+const getAuthHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("companyToken");
+    if (token) {
+      headers["Authorization"] = `Company ${token}`;
+    }
+  }
+  return headers;
+};
+
+export async function loginCompany(cnpj: string, email: string): Promise<{ company: Company; token: string }> {
+  const response = await fetch(`${API_URL}/companies/login/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cnpj, email }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    let detail = "Erro de autenticação";
+    try {
+      const parsed = JSON.parse(text);
+      detail = parsed.detail || parsed.message || detail;
+    } catch {
+      detail = text || detail;
+    }
+    throw new Error(detail);
+  }
+
+  return response.json() as Promise<{ company: Company; token: string }>;
+}
+
+export async function fetchMyJobs(): Promise<Job[]> {
+  const response = await fetch(`${API_URL}/jobs/my-jobs/`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Backend returned ${response.status}: ${text}`);
+  }
+
+  return response.json() as Promise<Job[]>;
 }
 
 export async function createJob(payload: CreateJobPayload): Promise<Job> {
   const response = await fetch(`${API_URL}/jobs/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Backend returned ${response.status}: ${text}`);
+    throw new Error(text || `Backend returned ${response.status}: ${text}`);
   }
 
   return response.json() as Promise<Job>;
+}
+
+export async function updateJob(id: number | string, payload: Partial<CreateJobPayload>): Promise<Job> {
+  const response = await fetch(`${API_URL}/jobs/${id}/`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Backend returned ${response.status}: ${text}`);
+  }
+
+  return response.json() as Promise<Job>;
+}
+
+export async function deleteJob(id: number | string): Promise<void> {
+  const response = await fetch(`${API_URL}/jobs/${id}/`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Backend returned ${response.status}: ${text}`);
+  }
 }
 
 export interface Company {
@@ -107,6 +188,8 @@ export interface Company {
   neighborhood?: string | null;
   phone?: string | null;
   email?: string | null;
+  cnpj?: string;
+  is_verified?: boolean;
   logo_url?: string | null;
   created_at?: string;
 }
@@ -138,4 +221,18 @@ export async function createCompany(payload: CreateCompanyPayload): Promise<Comp
   }
 
   return response.json() as Promise<Company>;
+}
+
+export async function applyToJob(id: number | string, payload: FormData): Promise<unknown> {
+  const response = await fetch(`${API_URL}/jobs/${id}/apply/`, {
+    method: "POST",
+    body: payload,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Backend returned ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
 }

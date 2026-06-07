@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import FileExtensionValidator
 
 class Job(models.Model):
     class ContractType(models.TextChoices):
@@ -57,3 +58,29 @@ class Job(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.company.name}"
+
+
+class Candidacy(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    job = models.ForeignKey(
+        Job,
+        on_delete=models.CASCADE,
+        related_name="candidacies",
+        verbose_name="Vaga"
+    )
+    full_name = models.CharField(max_length=255, verbose_name="Nome Completo")
+    email = models.EmailField(verbose_name="E-mail")
+    phone = models.CharField(max_length=20, verbose_name="Telefone")
+    resume = models.FileField(
+        upload_to="resumes/%Y/%m/%d/",
+        validators=[FileExtensionValidator(allowed_extensions=["pdf", "doc", "docx"])],
+        verbose_name="Currículo"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Candidatado em")
+
+    class Meta:
+        verbose_name = "Candidatura"
+        verbose_name_plural = "Candidaturas"
+
+    def __str__(self):
+        return f"{self.full_name} - {self.job.title}"

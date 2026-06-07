@@ -94,3 +94,31 @@ class CompanyDetailAPIView(APIView):
         company = get_object_or_404(Company, pk=pk)
         company.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CompanyLoginAPIView(APIView):
+    """
+    Endpoint simples para login de empresa usando CNPJ e E-mail de cadastro.
+    """
+    def post(self, request, *args, **kwargs):
+        cnpj = request.data.get("cnpj", "").strip()
+        email = request.data.get("email", "").strip()
+        
+        if not cnpj or not email:
+            return Response(
+                {"detail": "CNPJ e E-mail são obrigatórios."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        company = Company.objects.filter(cnpj=cnpj, email=email).first()
+        if not company:
+            return Response(
+                {"detail": "Empresa não encontrada com os dados informados. Verifique se o CNPJ e o E-mail estão corretos."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        serializer = CompanySerializer(company)
+        return Response({
+            "company": serializer.data,
+            "token": cnpj
+        })

@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import CompanyListAPIView, CompanyDetailAPIView, CompanyLoginAPIView
+
+from .views import CompanyDetailAPIView, CompanyListAPIView, CompanyLoginAPIView
 
 app_name = "companies"
 

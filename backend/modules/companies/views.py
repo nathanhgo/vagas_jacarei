@@ -1,7 +1,8 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .models import Company
 from .serializers import CompanySerializer
 
@@ -11,7 +12,7 @@ class CompanyListAPIView(APIView):
     GET: List all companies with pagination and search
     POST: Create a new company
     """
-    
+
     def get(self, request, *args, **kwargs):
         page = request.query_params.get("page", 1)
         try:
@@ -20,7 +21,7 @@ class CompanyListAPIView(APIView):
                 page = 1
         except ValueError:
             page = 1
-            
+
         page_size = request.query_params.get("page_size", 10)
         try:
             page_size = int(page_size)
@@ -28,40 +29,42 @@ class CompanyListAPIView(APIView):
                 page_size = 10
         except ValueError:
             page_size = 10
-            
+
         search_query = request.query_params.get("search", "")
-        
+
         queryset = Company.objects.all()
-        
+
         if search_query:
             queryset = queryset.filter(name__icontains=search_query)
-        
+
         count = queryset.count()
         start_idx = (page - 1) * page_size
         end_idx = start_idx + page_size
-        
+
         results = queryset[start_idx:end_idx]
         serializer = CompanySerializer(results, many=True)
-        
+
         next_page = None
         if page * page_size < count:
             next_page = f"/api/companies/?page={page + 1}&page_size={page_size}"
             if search_query:
                 next_page += f"&search={search_query}"
-                
+
         prev_page = None
         if page > 1:
             prev_page = f"/api/companies/?page={page - 1}&page_size={page_size}"
             if search_query:
                 prev_page += f"&search={search_query}"
-        
-        return Response({
-            "count": count,
-            "next": next_page,
-            "previous": prev_page,
-            "results": serializer.data
-        })
-    
+
+        return Response(
+            {
+                "count": count,
+                "next": next_page,
+                "previous": prev_page,
+                "results": serializer.data,
+            }
+        )
+
     def post(self, request, *args, **kwargs):
         serializer = CompanySerializer(data=request.data)
         if serializer.is_valid():
@@ -76,12 +79,12 @@ class CompanyDetailAPIView(APIView):
     PUT: Update a specific company
     DELETE: Delete a specific company
     """
-    
+
     def get(self, request, pk, *args, **kwargs):
         company = get_object_or_404(Company, pk=pk)
         serializer = CompanySerializer(company)
         return Response(serializer.data)
-    
+
     def put(self, request, pk, *args, **kwargs):
         company = get_object_or_404(Company, pk=pk)
         serializer = CompanySerializer(company, data=request.data, partial=True)
@@ -89,7 +92,7 @@ class CompanyDetailAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def delete(self, request, pk, *args, **kwargs):
         company = get_object_or_404(Company, pk=pk)
         company.delete()
@@ -100,25 +103,25 @@ class CompanyLoginAPIView(APIView):
     """
     Endpoint simples para login de empresa usando CNPJ e E-mail de cadastro.
     """
+
     def post(self, request, *args, **kwargs):
         cnpj = request.data.get("cnpj", "").strip()
         email = request.data.get("email", "").strip()
-        
+
         if not cnpj or not email:
             return Response(
                 {"detail": "CNPJ e E-mail são obrigatórios."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         company = Company.objects.filter(cnpj=cnpj, email=email).first()
         if not company:
             return Response(
-                {"detail": "Empresa não encontrada com os dados informados. Verifique se o CNPJ e o E-mail estão corretos."},
-                status=status.HTTP_404_NOT_FOUND
+                {
+                    "detail": "Empresa não encontrada com os dados informados. Verifique se o CNPJ e o E-mail estão corretos."
+                },
+                status=status.HTTP_404_NOT_FOUND,
             )
-            
+
         serializer = CompanySerializer(company)
-        return Response({
-            "company": serializer.data,
-            "token": cnpj
-        })
+        return Response({"company": serializer.data, "token": cnpj})

@@ -1,12 +1,15 @@
 from rest_framework import serializers
-from .models import Job, Candidacy
+
+from .models import Candidacy, Job
+
 
 class JobSerializer(serializers.ModelSerializer):
     company = serializers.CharField(source="company.name", read_only=True)
 
     class Meta:
         model = Job
-        fields = '__all__'
+        fields = "__all__"
+
 
 class CandidacySerializer(serializers.ModelSerializer):
     class Meta:

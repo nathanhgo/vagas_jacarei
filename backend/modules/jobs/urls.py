@@ -1,5 +1,11 @@
 from django.urls import path
-from .views import JobListAPIView, JobDetailAPIView, JobCandidacyAPIView, CompanyJobsAPIView
+
+from .views import (
+    CompanyJobsAPIView,
+    JobCandidacyAPIView,
+    JobDetailAPIView,
+    JobListAPIView,
+)
 
 app_name = "jobs"
 

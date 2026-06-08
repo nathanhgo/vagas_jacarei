@@ -5,8 +5,8 @@ All environment-specific settings should go in development.py or production.py.
 
 from pathlib import Path
 
-from decouple import Csv, config, AutoConfig
 import dj_database_url
+from decouple import AutoConfig, Csv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -76,9 +76,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 db_url = config("DATABASE_URL", default=None)
 if db_url:
-    DATABASES = {
-        "default": dj_database_url.config(default=db_url, conn_max_age=600)
-    }
+    DATABASES = {"default": dj_database_url.config(default=db_url, conn_max_age=600)}
 else:
     DATABASES = {
         "default": {
@@ -93,7 +91,9 @@ else:
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -142,5 +142,11 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000", cast=Csv())
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS", default="http://localhost:3000", cast=Csv()
+)
 CORS_ALLOW_CREDENTIALS = True
+
+# Media files (uploads)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

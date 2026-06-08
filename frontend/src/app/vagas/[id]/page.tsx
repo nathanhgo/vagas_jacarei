@@ -7,26 +7,21 @@ import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Avatar from "@mui/material/Avatar";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 
-// Icons
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import MenuIcon from "@mui/icons-material/Menu";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import WorkIcon from "@mui/icons-material/Work";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 import { fetchJobById, type Job } from "@/lib/api";
+import ApplyModal from "@/components/ApplyModal";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -34,22 +29,42 @@ interface PageProps {
 
 export default function JobDetailsPage({ params }: PageProps) {
   const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  
-  // Unwrapping params using React.use() as required in Next.js 15
+
+  const [isCompanyLoggedIn, setIsCompanyLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const checkToken = async () => {
+      await Promise.resolve();
+      if (active && typeof window !== "undefined") {
+        const token = localStorage.getItem("companyToken");
+        setIsCompanyLoggedIn(!!token);
+      }
+    };
+    checkToken();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const unwrappedParams = use(params);
   const jobId = unwrappedParams.id;
 
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [openModal, setOpenModal] = useState<boolean>(false);
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
 
   useEffect(() => {
     let active = true;
     async function loadJobDetails() {
       await Promise.resolve();
       if (!active) return;
-      
+
       setLoading(true);
       setError(null);
       try {
@@ -73,8 +88,6 @@ export default function JobDetailsPage({ params }: PageProps) {
       active = false;
     };
   }, [jobId]);
-
-
 
   if (loading) {
     return (
@@ -155,7 +168,6 @@ export default function JobDetailsPage({ params }: PageProps) {
         color: "text.primary",
       }}
     >
-      {/* 🚀 Header: Back Button, Logo - Company Name, Menu */}
       <Box
         component="header"
         sx={{
@@ -178,7 +190,6 @@ export default function JobDetailsPage({ params }: PageProps) {
             px: 2,
           }}
         >
-          {/* Back button */}
           <IconButton
             onClick={() => router.push("/vagas")}
             sx={{
@@ -192,7 +203,6 @@ export default function JobDetailsPage({ params }: PageProps) {
             <ArrowBackIcon />
           </IconButton>
 
-          {/* Centered Company Logo & Name */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Avatar
               variant="rounded"
@@ -212,42 +222,28 @@ export default function JobDetailsPage({ params }: PageProps) {
             </Typography>
           </Box>
 
-          {/* Menu button */}
-          <IconButton
-            onClick={(e) => setAnchorEl(e.currentTarget)}
+          <Button
+            variant="outlined"
+            onClick={() => router.push("/empresa/minhas-vagas")}
+            startIcon={<LocationCityIcon />}
             sx={{
-              border: "1px solid rgba(227, 207, 192, 0.6)",
-              borderRadius: 3,
-              background: "#FFFFFF",
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontWeight: 700,
+              borderColor: "rgba(227, 207, 192, 0.8)",
               color: "text.primary",
-              "&:hover": { background: "#FAF6F0" },
+              "&:hover": {
+                borderColor: "#4A85B6",
+                background: "#FAF6F0",
+              },
             }}
           >
-            <MenuIcon />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            <MenuItem
-              onClick={() => {
-                router.push("/empresa");
-                setAnchorEl(null);
-              }}
-              sx={{ textTransform: "none", fontWeight: 500 }}
-            >
-              Registrar Empresa
-            </MenuItem>
-          </Menu>
+            {isCompanyLoggedIn ? "Painel da Empresa" : "Área da Empresa"}
+          </Button>
         </Container>
       </Box>
 
-      {/* 🚀 Details Content */}
       <Container maxWidth="md" sx={{ flex: 1, py: 5, px: 2 }}>
-        {/* Top Card: Cargo & Grid of 6 Tags */}
         <Card
           elevation={0}
           sx={{
@@ -346,7 +342,6 @@ export default function JobDetailsPage({ params }: PageProps) {
           </Grid>
         </Card>
 
-        {/* Description Section */}
         <Card
           elevation={0}
           sx={{
@@ -385,7 +380,6 @@ export default function JobDetailsPage({ params }: PageProps) {
           </Typography>
         </Card>
 
-        {/* Bottom Applying Section (Massive Button matching the wireframe) */}
         <Box sx={{ mb: 6 }}>
           {job.external_link ? (
             <Button
@@ -420,6 +414,8 @@ export default function JobDetailsPage({ params }: PageProps) {
               variant="contained"
               fullWidth
               size="large"
+              onClick={() => setOpenModal(true)}
+              disabled={isCompanyLoggedIn}
               sx={{
                 background: "linear-gradient(135deg, #8FBAE3 0%, #F1A990 100%)",
                 color: "#ffffff",
@@ -435,13 +431,22 @@ export default function JobDetailsPage({ params }: PageProps) {
                   boxShadow: "0 12px 32px rgba(74, 133, 182, 0.35)",
                   transform: "translateY(-2px)",
                 },
+                ...(isCompanyLoggedIn && { opacity: 0.6 }),
               }}
             >
-              Candidatar-se à Vaga
+              {isCompanyLoggedIn ? "Empresas não podem se candidatar" : "Candidatar-se à Vaga"}
             </Button>
           )}
         </Box>
       </Container>
+
+      {job && (
+        <ApplyModal
+          open={openModal}
+          onClose={handleCloseModal}
+          job={job}
+        />
+      )}
     </Box>
   );
 }

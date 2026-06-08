@@ -140,15 +140,61 @@ class JobListAPIView(APIView):
                 | Q(neighborhood__icontains=search_query)
             )
 
-        count = queryset.count()
+        count_local = queryset.count()
         start_idx = (page - 1) * page_size
         end_idx = start_idx + page_size
 
-        results = queryset[start_idx:end_idx]
-        serializer = JobSerializer(results, many=True)
+        results_data = []
+        if start_idx < count_local:
+            local_results = list(queryset[start_idx:end_idx])
+            serializer = JobSerializer(local_results, many=True)
+            for item in serializer.data:
+                item["source"] = "local"
+            results_data.extend(serializer.data)
+
+        remaining = page_size - len(results_data)
+        count_adzuna = 0
+
+        # Fetch Adzuna
+        import requests
+        app_id = config("ADZUNA_APP_ID", default="")
+        app_key = config("ADZUNA_APP_KEY", default="")
+
+        if app_id and app_key:
+            try:
+                adzuna_start = max(0, start_idx - count_local)
+                adzuna_page = (adzuna_start // 50) + 1
+                
+                url = f"https://api.adzuna.com/v1/api/jobs/br/search/{adzuna_page}"
+                params = {
+                    "app_id": app_id,
+                    "app_key": app_key,
+                    "results_per_page": 50,
+                    "what": search_query,
+                    "where": "Jacareí",
+                }
+                response = requests.get(url, params=params, timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    count_adzuna = data.get("count", 0)
+                    adzuna_results = data.get("results", [])
+
+                    local_adzuna_start = adzuna_start % 50
+                    local_adzuna_end = local_adzuna_start + remaining
+
+                    sliced_adzuna = adzuna_results[local_adzuna_start:local_adzuna_end]
+                    for item in sliced_adzuna:
+                        formatted = _format_job_item(item)
+                        if formatted:
+                            formatted["source"] = "external"
+                            results_data.append(formatted)
+            except Exception as e:
+                print(f"Erro Adzuna: {e}")
+
+        total_count = count_local + count_adzuna
 
         next_page = None
-        if page * page_size < count:
+        if page * page_size < total_count:
             next_page = f"/api/jobs/?page={page + 1}&page_size={page_size}"
             if search_query:
                 next_page += f"&search={search_query}"
@@ -161,10 +207,10 @@ class JobListAPIView(APIView):
 
         return Response(
             {
-                "count": count,
+                "count": total_count,
                 "next": next_page,
                 "previous": prev_page,
-                "results": serializer.data,
+                "results": results_data,
             }
         )
 

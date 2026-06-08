@@ -13,6 +13,7 @@ import Pagination from "@mui/material/Pagination";
 import IconButton from "@mui/material/IconButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
+import Chip from "@mui/material/Chip";
 
 
 // Icons
@@ -332,8 +333,14 @@ export default function VagasPage() {
             {jobs.map((job) => {
               return (
                 <Card
-                  key={job.id}
-                  onClick={() => router.push(`/vagas/${job.id}`)}
+                  key={`${job.source || "local"}-${job.id}`}
+                  onClick={() => {
+                    if (job.source === "external" && job.external_link) {
+                      window.open(job.external_link, "_blank", "noopener,noreferrer");
+                    } else {
+                      router.push(`/vagas/${job.id}`);
+                    }
+                  }}
                   sx={{
                     background: "#FFFFFF",
                     border: "1px solid rgba(227, 207, 192, 0.4)",
@@ -368,6 +375,21 @@ export default function VagasPage() {
                   />
 
                   <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                    {job.source === "external" && (
+                      <Chip
+                        label="Externa"
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          top: 16,
+                          right: 16,
+                          background: "rgba(74, 133, 182, 0.1)",
+                          color: "#4A85B6",
+                          fontWeight: 700,
+                          fontSize: "0.7rem",
+                        }}
+                      />
+                    )}
                     <Box
                       sx={{
                         display: "flex",
@@ -479,7 +501,7 @@ export default function VagasPage() {
                           "&:hover": { color: "#E0876A" },
                         }}
                       >
-                        Ver Detalhes →
+                        {job.source === "external" ? "Ver no site ↗" : "Ver Detalhes →"}
                       </Button>
                     </Box>
                   </CardContent>

@@ -38,6 +38,7 @@ export interface Job {
   views_count?: number;
   clicks_count?: number;
   candidacies_count?: number;
+  source?: "local" | "external";
 }
 
 export interface PaginatedJobsResponse {

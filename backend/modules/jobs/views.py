@@ -1,19 +1,30 @@
-import requests
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.cache import cache
 from decouple import config
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 
 def extract_neighborhood(text):
     """Helper para extrair bairros conhecidos de Jacareí a partir do texto descritivo"""
     if not text:
         return None
-        
+
     bairros = [
-        "Centro", "Villa Branca", "Jardim das Indústrias", "Jardim Santa Maria", 
-        "Parque Califórnia", "Parque dos Sinos", "Jardim Paraíba", "Jardim Flórida", 
-        "Igarapés", "Jardim Coleginho", "Cidade Salvador", "Balneário Paraíba", "São João", "Jardim America"
+        "Centro",
+        "Villa Branca",
+        "Jardim das Indústrias",
+        "Jardim Santa Maria",
+        "Parque Califórnia",
+        "Parque dos Sinos",
+        "Jardim Paraíba",
+        "Jardim Flórida",
+        "Igarapés",
+        "Jardim Coleginho",
+        "Cidade Salvador",
+        "Balneário Paraíba",
+        "São João",
+        "Jardim America",
     ]
     text_lower = text.lower()
     for bairro in bairros:
@@ -28,7 +39,7 @@ def _format_job_item(item):
         job_id = int(item.get("id"))
     except (ValueError, TypeError):
         return None
-        
+
     title = item.get("title", "")
     company = item.get("company", {}).get("display_name", "Empresa Não Informada")
     description = item.get("description", "")
@@ -40,24 +51,30 @@ def _format_job_item(item):
         except (ValueError, TypeError):
             salary = None
     created_at = item.get("created", "")
-    
+
     extracted_text = f"{title} {description}"
     neighborhood = extract_neighborhood(extracted_text)
-    
+
     desc_lower = (title + " " + description).lower()
-    if "estágio" in desc_lower or "estagiário" in desc_lower or "estagiária" in desc_lower:
+    if (
+        "estágio" in desc_lower
+        or "estagiário" in desc_lower
+        or "estagiária" in desc_lower
+    ):
         type_of_contract = "INTERNSHIP"
     elif "pj" in desc_lower or "pessoa jurídica" in desc_lower:
         type_of_contract = "PJ"
     elif "freelance" in desc_lower or "freelancer" in desc_lower:
         type_of_contract = "FREELANCE"
-    elif "temporário" in desc_lower or "temporária" in desc_lower:
-        type_of_contract = "TEMPORARY"
-    elif item.get("contract_type") == "contract":
+    elif (
+        "temporário" in desc_lower
+        or "temporária" in desc_lower
+        or item.get("contract_type") == "contract"
+    ):
         type_of_contract = "TEMPORARY"
     else:
         type_of_contract = "CLT"
-        
+
     return {
         "id": job_id,
         "title": title,
@@ -76,17 +93,24 @@ def _format_job_item(item):
         "updated_at": created_at,
     }
 
+
+def get_authenticated_company(request):
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Company "):
+        cnpj = auth_header.split(" ")[1]
+        from modules.companies.models import Company
+
+        return Company.objects.filter(cnpj=cnpj).first()
+    return None
+
+
 class JobListAPIView(APIView):
     def get(self, request, *args, **kwargs):
-        APP_ID = config("ADZUNA_APP_ID", default="")
-        APP_KEY = config("ADZUNA_APP_KEY", default="")
-        
-        if not APP_ID or not APP_KEY:
-            return Response(
-                {"error": "ADZUNA_APP_ID ou ADZUNA_APP_KEY não configurados no backend."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            
+        from django.db.models import Q
+
+        from .models import Job
+        from .serializers import JobSerializer
+
         page = request.query_params.get("page", 1)
         try:
             page = int(page)
@@ -94,7 +118,7 @@ class JobListAPIView(APIView):
                 page = 1
         except ValueError:
             page = 1
-            
+
         page_size = request.query_params.get("page_size", 6)
         try:
             page_size = int(page_size)
@@ -102,62 +126,111 @@ class JobListAPIView(APIView):
                 page_size = 6
         except ValueError:
             page_size = 6
-            
+
         search_query = request.query_params.get("search", "")
-        
-        url = f"https://api.adzuna.com/v1/api/jobs/br/search/{page}"
-        params = {
-            "app_id": APP_ID,
-            "app_key": APP_KEY,
-            "results_per_page": page_size,
-            "where": "Jacarei",
-            "content-type": "application/json"
-        }
+
+        # Filtra apenas vagas locais ativas (desativamos busca externa)
+        queryset = Job.objects.filter(is_active=True).order_by("-created_at")
+
         if search_query:
-            params["what"] = search_query
-            
-        try:
-            response = requests.get(url, params=params, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                count = data.get("count", 0)
-                results = data.get("results", [])
-                
-                formatted_jobs = []
-                for item in results:
-                    job_data = _format_job_item(item)
-                    if job_data:
-                        cache.set(f"job_details_{job_data['id']}", job_data, timeout=3600) # 1 hour TTL
-                        formatted_jobs.append(job_data)
-                    
-                next_page = None
-                if page * page_size < count:
-                    next_page = f"/api/jobs/?page={page + 1}&page_size={page_size}"
-                    if search_query:
-                        next_page += f"&search={search_query}"
-                        
-                prev_page = None
-                if page > 1:
-                    prev_page = f"/api/jobs/?page={page - 1}&page_size={page_size}"
-                    if search_query:
-                        prev_page += f"&search={search_query}"
-                        
-                return Response({
-                    "count": count,
-                    "next": next_page,
-                    "previous": prev_page,
-                    "results": formatted_jobs
-                })
-            else:
-                return Response(
-                    {"error": f"Erro da API externa Adzuna: {response.text}"},
-                    status=response.status_code
-                )
-        except Exception as e:
-            return Response(
-                {"error": f"Falha de conexão com a API externa: {str(e)}"},
-                status=status.HTTP_502_BAD_GATEWAY
+            queryset = queryset.filter(
+                Q(title__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(company__name__icontains=search_query)
+                | Q(neighborhood__icontains=search_query)
             )
+
+        count_local = queryset.count()
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+
+        results_data = []
+        if start_idx < count_local:
+            local_results = list(queryset[start_idx:end_idx])
+            serializer = JobSerializer(local_results, many=True)
+            for item in serializer.data:
+                item["source"] = "local"
+            results_data.extend(serializer.data)
+
+        remaining = page_size - len(results_data)
+        count_adzuna = 0
+
+        # Fetch Adzuna
+        import requests
+        app_id = config("ADZUNA_APP_ID", default="")
+        app_key = config("ADZUNA_APP_KEY", default="")
+
+        if app_id and app_key:
+            try:
+                adzuna_start = max(0, start_idx - count_local)
+                adzuna_page = (adzuna_start // 50) + 1
+                
+                url = f"https://api.adzuna.com/v1/api/jobs/br/search/{adzuna_page}"
+                params = {
+                    "app_id": app_id,
+                    "app_key": app_key,
+                    "results_per_page": 50,
+                    "what": search_query,
+                    "where": "Jacareí",
+                }
+                response = requests.get(url, params=params, timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    count_adzuna = data.get("count", 0)
+                    adzuna_results = data.get("results", [])
+
+                    local_adzuna_start = adzuna_start % 50
+                    local_adzuna_end = local_adzuna_start + remaining
+
+                    sliced_adzuna = adzuna_results[local_adzuna_start:local_adzuna_end]
+                    for item in sliced_adzuna:
+                        formatted = _format_job_item(item)
+                        if formatted:
+                            formatted["source"] = "external"
+                            results_data.append(formatted)
+            except Exception as e:
+                print(f"Erro Adzuna: {e}")
+
+        total_count = count_local + count_adzuna
+
+        next_page = None
+        if page * page_size < total_count:
+            next_page = f"/api/jobs/?page={page + 1}&page_size={page_size}"
+            if search_query:
+                next_page += f"&search={search_query}"
+
+        prev_page = None
+        if page > 1:
+            prev_page = f"/api/jobs/?page={page - 1}&page_size={page_size}"
+            if search_query:
+                prev_page += f"&search={search_query}"
+
+        return Response(
+            {
+                "count": total_count,
+                "next": next_page,
+                "previous": prev_page,
+                "results": results_data,
+            }
+        )
+
+    def post(self, request, *args, **kwargs):
+        company = get_authenticated_company(request)
+        if not company:
+            return Response(
+                {"detail": "Não autorizado. Faça login como empresa."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        from .serializers import JobSerializer
+
+        serializer = JobSerializer(data=request.data)
+        if serializer.is_valid():
+            status_vaga = "published"
+            serializer.save(company=company, status=status_vaga)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class JobDetailAPIView(APIView):
     def get(self, request, pk, *args, **kwargs):
@@ -165,54 +238,208 @@ class JobDetailAPIView(APIView):
             job_id = int(pk)
         except (ValueError, TypeError):
             return Response(
-                {"detail": "ID de vaga inválido."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "ID de vaga inválido."}, status=status.HTTP_400_BAD_REQUEST
             )
-        
-        cached_job = cache.get(f"job_details_{job_id}")
-        if cached_job:
-            return Response(cached_job)
-            
-        APP_ID = config("ADZUNA_APP_ID", default="")
-        APP_KEY = config("ADZUNA_APP_KEY", default="")
-        
-        if not APP_ID or not APP_KEY:
+
+        from .models import Job
+        from .serializers import JobSerializer
+
+        local_job = Job.objects.filter(pk=job_id, is_active=True).first()
+        if local_job:
+            from django.db.models import F
+            Job.objects.filter(pk=job_id).update(views_count=F("views_count") + 1)
+            local_job.refresh_from_db()
+
+            serializer = JobSerializer(local_job)
+            data = serializer.data
+            data["source"] = "local"
+            return Response(data)
+
+        return Response(
+            {"detail": "Vaga não encontrada."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    def put(self, request, pk, *args, **kwargs):
+        company = get_authenticated_company(request)
+        if not company:
             return Response(
-                {"error": "ADZUNA_APP_ID ou ADZUNA_APP_KEY não configurados no backend."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"detail": "Não autorizado. Faça login como empresa."},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
-            
-        url = "https://api.adzuna.com/v1/api/jobs/br/search/1"
-        params = {
-            "app_id": APP_ID,
-            "app_key": APP_KEY,
-            "results_per_page": 1,
-            "what": str(job_id),
-            "where": "Jacarei",
-            "content-type": "application/json"
-        }
-        
-        try:
-            response = requests.get(url, params=params, timeout=10)
-            if response.status_code == 200:
-                results = response.json().get("results", [])
-                for item in results:
-                    job_data = _format_job_item(item)
-                    if job_data and job_data["id"] == job_id:
-                        cache.set(f"job_details_{job_id}", job_data, timeout=3600)
-                        return Response(job_data)
-                
-                return Response(
-                    {"detail": "Vaga não encontrada na API externa."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            else:
-                return Response(
-                    {"error": f"Erro da API externa Adzuna: {response.text}"},
-                    status=response.status_code
-                )
-        except Exception as e:
+
+        from .models import Job
+        from .serializers import JobSerializer
+
+        job = get_object_or_404(Job, pk=pk)
+
+        if job.company != company:
             return Response(
-                {"error": f"Falha ao consultar a API externa: {str(e)}"},
-                status=status.HTTP_502_BAD_GATEWAY
+                {"detail": "Permissão negada. Esta vaga não pertence à sua empresa."},
+                status=status.HTTP_403_FORBIDDEN,
             )
+
+        serializer = JobSerializer(job, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, *args, **kwargs):
+        company = get_authenticated_company(request)
+        if not company:
+            return Response(
+                {"detail": "Não autorizado. Faça login como empresa."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        from .models import Job
+
+        job = get_object_or_404(Job, pk=pk)
+
+        if job.company != company:
+            return Response(
+                {"detail": "Permissão negada. Esta vaga não pertence à sua empresa."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        job.is_active = False
+        job.status = "deleted"
+        job.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CompanyJobsAPIView(APIView):
+    """
+    Lista todas as vagas (ativas ou inativas) da empresa autenticada.
+    """
+
+    def get(self, request, *args, **kwargs):
+        company = get_authenticated_company(request)
+        if not company:
+            return Response(
+                {"detail": "Não autorizado. Faça login como empresa."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        from .models import Job
+        from .serializers import JobSerializer
+
+        queryset = (
+            Job.objects.filter(company=company)
+            .exclude(status="deleted")
+            .order_by("-created_at")
+        )
+        serializer = JobSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class JobCandidacyAPIView(APIView):
+    """
+    Endpoint para realizar candidatura rápida enviando currículo (PDF/DOC/DOCX).
+    Envia automaticamente os dados e o anexo por e-mail para o RH cadastrado.
+    """
+
+    from rest_framework.parsers import FormParser, MultiPartParser
+
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk, *args, **kwargs):
+        from django.core.mail import EmailMessage
+        from django.shortcuts import get_object_or_404
+
+        from .models import Job
+        from .serializers import CandidacySerializer
+
+        # 1. Tenta buscar a vaga local no banco
+        job = get_object_or_404(Job, pk=pk, is_active=True)
+
+        from .models import Candidacy
+        email = request.data.get("email", "").strip()
+        if Candidacy.objects.filter(job=job, email=email).exists():
+            return Response(
+                {"email": ["Você já se candidatou a esta vaga com este e-mail."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 2. Valida e salva os dados da candidatura
+        serializer = CandidacySerializer(data=request.data)
+        if serializer.is_valid():
+            candidacy = serializer.save(job=job)
+            from django.db.models import F
+            Job.objects.filter(pk=job.id).update(clicks_count=F("clicks_count") + 1)
+
+            # 3. Determina o e-mail de recebimento (ref_email da vaga ou e-mail da empresa)
+            recipient_email = job.ref_email or job.company.email
+            if recipient_email:
+                try:
+                    subject = f"[Emprega Jacareí] Nova Candidatura - {job.title}"
+                    body = (
+                        f"Olá,\n\n"
+                        f"Uma nova candidatura foi enviada para a vaga '{job.title}'.\n\n"
+                        f"Dados do Candidato:\n"
+                        f"- Nome: {candidacy.full_name}\n"
+                        f"- E-mail: {candidacy.email}\n"
+                        f"- Telefone: {candidacy.phone}\n\n"
+                        f"O currículo do candidato está anexado a este e-mail.\n\n"
+                        f"Atenciosamente,\n"
+                        f"Plataforma Emprega Jacareí"
+                    )
+
+                    email = EmailMessage(
+                        subject=subject,
+                        body=body,
+                        from_email=config(
+                            "DEFAULT_FROM_EMAIL", default="noreply@jacarei.sp.gov.br"
+                        ),
+                        to=[recipient_email],
+                    )
+
+                    # Anexa o currículo
+                    if candidacy.resume:
+                        import mimetypes
+
+                        candidacy.resume.open()
+                        filename = candidacy.resume.name.split("/")[-1]
+                        content_type, _ = mimetypes.guess_type(filename)
+                        if not content_type:
+                            content_type = "application/octet-stream"
+                        email.attach(filename, candidacy.resume.read(), content_type)
+
+                    email.send(fail_silently=False)
+                except Exception as mail_err:
+                    # Logamos o erro de e-mail mas retornamos 201
+                    print(f"Erro ao enviar e-mail de candidatura: {str(mail_err)}")
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class JobCandidaciesAPIView(APIView):
+    """
+    Lista todas as candidaturas/candidatos para uma vaga específica.
+    Apenas acessível pela empresa proprietária da vaga.
+    """
+
+    def get(self, request, pk, *args, **kwargs):
+        company = get_authenticated_company(request)
+        if not company:
+            return Response(
+                {"detail": "Não autorizado. Faça login como empresa."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        from .models import Candidacy, Job
+        from .serializers import CandidacySerializer
+
+        job = get_object_or_404(Job, pk=pk)
+
+        if job.company != company:
+            return Response(
+                {"detail": "Permissão negada. Esta vaga não pertence à sua empresa."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        queryset = Candidacy.objects.filter(job=job).order_by("-created_at")
+        serializer = CandidacySerializer(queryset, many=True)
+        return Response(serializer.data)

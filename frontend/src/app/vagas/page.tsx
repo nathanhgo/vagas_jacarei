@@ -13,12 +13,12 @@ import Pagination from "@mui/material/Pagination";
 import IconButton from "@mui/material/IconButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
+import Chip from "@mui/material/Chip";
+
 
 // Icons
 import SearchIcon from "@mui/icons-material/Search";
-import MenuIcon from "@mui/icons-material/Menu";
+
 import WorkIcon from "@mui/icons-material/Work";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
@@ -31,7 +31,23 @@ import { useRouter } from "next/navigation";
 
 export default function VagasPage() {
   const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const [isCompanyLoggedIn, setIsCompanyLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const checkToken = async () => {
+      await Promise.resolve();
+      if (active && typeof window !== "undefined") {
+        const token = localStorage.getItem("companyToken");
+        setIsCompanyLoggedIn(!!token);
+      }
+    };
+    checkToken();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // State variables for CSR
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -198,36 +214,25 @@ export default function VagasPage() {
             />
           </Box>
 
-          {/* Menu Button */}
-          <IconButton
-            onClick={(e) => setAnchorEl(e.currentTarget)}
+          {/* Direct Link to Company Area */}
+          <Button
+            variant="outlined"
+            onClick={() => router.push("/empresa/minhas-vagas")}
+            startIcon={<LocationCityIcon />}
             sx={{
-              border: "1px solid rgba(227, 207, 192, 0.6)",
-              borderRadius: 3,
-              background: "#FFFFFF",
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontWeight: 700,
+              borderColor: "rgba(227, 207, 192, 0.8)",
               color: "text.primary",
-              "&:hover": { background: "#FAF6F0" },
+              "&:hover": {
+                borderColor: "#4A85B6",
+                background: "#FAF6F0",
+              },
             }}
           >
-            <MenuIcon />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            <MenuItem
-              onClick={() => {
-                router.push("/empresa");
-                setAnchorEl(null);
-              }}
-              sx={{ textTransform: "none", fontWeight: 500 }}
-            >
-              Registrar Empresa
-            </MenuItem>
-          </Menu>
+            {isCompanyLoggedIn ? "Painel da Empresa" : "Área da Empresa"}
+          </Button>
         </Container>
       </Box>
 
@@ -328,8 +333,14 @@ export default function VagasPage() {
             {jobs.map((job) => {
               return (
                 <Card
-                  key={job.id}
-                  onClick={() => router.push(`/vagas/${job.id}`)}
+                  key={`${job.source || "local"}-${job.id}`}
+                  onClick={() => {
+                    if (job.source === "external" && job.external_link) {
+                      window.open(job.external_link, "_blank", "noopener,noreferrer");
+                    } else {
+                      router.push(`/vagas/${job.id}`);
+                    }
+                  }}
                   sx={{
                     background: "#FFFFFF",
                     border: "1px solid rgba(227, 207, 192, 0.4)",
@@ -364,6 +375,21 @@ export default function VagasPage() {
                   />
 
                   <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                    {job.source === "external" && (
+                      <Chip
+                        label="Externa"
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          top: 16,
+                          right: 16,
+                          background: "rgba(74, 133, 182, 0.1)",
+                          color: "#4A85B6",
+                          fontWeight: 700,
+                          fontSize: "0.7rem",
+                        }}
+                      />
+                    )}
                     <Box
                       sx={{
                         display: "flex",
@@ -475,7 +501,7 @@ export default function VagasPage() {
                           "&:hover": { color: "#E0876A" },
                         }}
                       >
-                        Ver Detalhes →
+                        {job.source === "external" ? "Ver no site ↗" : "Ver Detalhes →"}
                       </Button>
                     </Box>
                   </CardContent>

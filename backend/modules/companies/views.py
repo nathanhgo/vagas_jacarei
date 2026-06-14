@@ -130,3 +130,28 @@ class CompanyLoginAPIView(APIView):
 
         serializer = CompanySerializer(company)
         return Response({"company": serializer.data, "token": cnpj})
+
+class CompanyGoogleAuthAPIView(APIView):
+    """
+    Login/Registro de empresa usando a conta Google.
+    Apenas checa pelo email. Se existir, loga. Se não, retorna 404.
+    """
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get("email", "").strip()
+
+        if not email:
+            return Response(
+                {"detail": "E-mail é obrigatório para autenticação via Google."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        company = Company.objects.filter(email=email).first()
+        if not company:
+            return Response(
+                {"detail": "Empresa não encontrada.", "need_registration": True},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = CompanySerializer(company)
+        return Response({"company": serializer.data, "token": company.cnpj})

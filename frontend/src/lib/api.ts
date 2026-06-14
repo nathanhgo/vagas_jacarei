@@ -128,6 +128,32 @@ export async function loginCompany(cnpj: string, email: string, password: string
   return response.json() as Promise<{ company: Company; token: string }>;
 }
 
+export async function loginCompanyWithGoogle(email: string): Promise<{ company: Company; token: string }> {
+  const response = await fetch(`${API_URL}/companies/google-auth/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    let detail = "Erro de autenticação";
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.need_registration) {
+        throw new Error("NEED_REGISTRATION");
+      }
+      detail = parsed.detail || parsed.message || detail;
+    } catch (e) {
+      if ((e as Error).message === "NEED_REGISTRATION") throw e;
+      detail = text || detail;
+    }
+    throw new Error(detail);
+  }
+
+  return response.json() as Promise<{ company: Company; token: string }>;
+}
+
 
 export async function fetchMyJobs(): Promise<Job[]> {
   const response = await fetch(`${API_URL}/jobs/my-jobs/`, {

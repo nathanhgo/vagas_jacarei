@@ -504,6 +504,7 @@ export default function JobDetailsManagementPage({ params }: PageProps) {
                             </Typography>
                           </Box>
                         }
+                        secondaryTypographyProps={{ component: "div" } as any}
                       />
                     </ListItem>
                   </Box>

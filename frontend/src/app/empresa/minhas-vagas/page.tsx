@@ -100,13 +100,15 @@ export default function MinhasVagasPage() {
     };
   }, [isLoggedIn]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("companyToken");
     localStorage.removeItem("companyData");
     setIsLoggedIn(false);
     setCompanyData(null);
     setMyJobs([]);
-    router.push("/empresa");
+    // Import the signOut dynamically or ensure it's at the top. Let's just do it cleanly.
+    const { signOut } = await import("next-auth/react");
+    await signOut({ callbackUrl: "/empresa" });
   };
 
   const handleOpenNewJob = () => {
@@ -136,6 +138,10 @@ export default function MinhasVagasPage() {
       }
     }
   };
+
+  const totalViews = myJobs.reduce((acc, job) => acc + (job.views_count || 0), 0);
+  const totalClicks = myJobs.reduce((acc, job) => acc + (job.clicks_count || 0), 0);
+  const totalCandidacies = myJobs.reduce((acc, job) => acc + (job.candidacies_count || 0), 0);
 
   if (!isLoggedIn || !companyData) {
     return (
@@ -228,7 +234,46 @@ export default function MinhasVagasPage() {
       <Container maxWidth="lg" sx={{ flex: 1, py: 6, px: 2 }}>
         <Grid container spacing={4}>
           <Grid size={{ xs: 12, md: 4 }}>
-            <CompanyProfileCard company={companyData} />
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <CompanyProfileCard company={companyData} />
+
+              <Card
+                elevation={0}
+                sx={{
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(227, 207, 192, 0.4)",
+                  borderRadius: 4,
+                  p: 3,
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#2A3543", mb: 2 }}>
+                  Desempenho Geral
+                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "text.secondary" }}>
+                      <VisibilityIcon sx={{ fontSize: 18, color: "#8FBAE3" }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Visualizações</Typography>
+                    </Box>
+                    <Typography variant="body1" sx={{ fontWeight: 800 }}>{totalViews}</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "text.secondary" }}>
+                      <MouseIcon sx={{ fontSize: 18, color: "#F1A990" }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Cliques na vaga</Typography>
+                    </Box>
+                    <Typography variant="body1" sx={{ fontWeight: 800 }}>{totalClicks}</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "text.secondary" }}>
+                      <SendIcon sx={{ fontSize: 16, color: "#4A85B6" }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Currículos recebidos</Typography>
+                    </Box>
+                    <Typography variant="body1" sx={{ fontWeight: 800 }}>{totalCandidacies}</Typography>
+                  </Box>
+                </Box>
+              </Card>
+            </Box>
           </Grid>
 
           <Grid size={{ xs: 12, md: 8 }}>

@@ -127,7 +127,7 @@ export default function CompanyJobDialog({ open, onClose, job, onSaveSuccess }: 
           pb: 1.5,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography variant="h6" component="span" sx={{ fontWeight: 800 }}>
           {dialogTitleText}
         </Typography>
         <IconButton onClick={onClose} disabled={jobSubmitting}>

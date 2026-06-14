@@ -504,7 +504,8 @@ export default function JobDetailsManagementPage({ params }: PageProps) {
                             </Typography>
                           </Box>
                         }
-                        secondaryTypographyProps={{ component: "div" } as any}
+                        {/* @ts-expect-error - MUI type mismatch for component prop */}
+                        secondaryTypographyProps={{ component: "div" }}
                       />
                     </ListItem>
                   </Box>

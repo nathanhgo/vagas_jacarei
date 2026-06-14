@@ -23,9 +23,10 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import BusinessIcon from "@mui/icons-material/Business";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 
-import { createCompany, loginCompany } from "@/lib/api";
+import { createCompany, loginCompany, loginCompanyWithGoogle } from "@/lib/api";
 import { formatCnpj, formatPhone, formatCep } from "@/utils/formatters";
 import { isValidCnpj, isValidPhone, isValidCep } from "@/utils/validators";
+import { signIn, useSession } from "next-auth/react";
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
@@ -40,6 +41,7 @@ const inputSx = {
 
 export default function EmpresaLoginPage() {
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
 
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
@@ -74,7 +76,30 @@ export default function EmpresaLoginPage() {
     setMounted(true);
   }, [router]);
 
-
+  useEffect(() => {
+    if (sessionStatus === "authenticated" && session?.user?.email && !localStorage.getItem("companyToken")) {
+      const doGoogleAuth = async () => {
+        setLoading(true);
+        try {
+          const data = await loginCompanyWithGoogle(session.user!.email as string);
+          localStorage.setItem("companyToken", data.token);
+          localStorage.setItem("companyData", JSON.stringify(data.company));
+          router.push("/empresa/minhas-vagas");
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : "";
+          if (errMsg === "NEED_REGISTRATION") {
+            localStorage.setItem("pendingGoogleUser", JSON.stringify(session.user));
+            router.push("/empresa/completar-cadastro");
+          } else {
+            setError(errMsg || "Erro ao autenticar com Google.");
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+      doGoogleAuth();
+    }
+  }, [sessionStatus, session, router]);
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const newCep = formatCep(e.target.value);
     setRegCep(newCep);
@@ -465,6 +490,30 @@ export default function EmpresaLoginPage() {
                 {loading ? <CircularProgress size={24} sx={{ color: "#ffffff" }} /> : "Entrar no Painel"}
               </Button>
 
+              <Button
+                variant="outlined"
+                onClick={() => signIn("google")}
+                disabled={loading}
+                fullWidth
+                sx={{
+                  mt: 0.5,
+                  borderRadius: 3,
+                  py: 1.5,
+                  fontWeight: 700,
+                  color: "#2A3543",
+                  borderColor: "rgba(227, 207, 192, 0.8)",
+                  display: "flex",
+                  gap: 1.5,
+                  "&:hover": {
+                    background: "rgba(227, 207, 192, 0.1)",
+                    borderColor: "#4A85B6",
+                  }
+                }}
+              >
+                <img src="https://authjs.dev/img/providers/google.svg" alt="Google" style={{ width: 20, height: 20 }} />
+                Continuar com Google
+              </Button>
+
               <Typography
                 variant="body2"
                 color="text.secondary"
@@ -704,6 +753,30 @@ export default function EmpresaLoginPage() {
                 sx={{ ...gradientBtn, mt: 0.5 }}
               >
                 {loading ? <CircularProgress size={24} sx={{ color: "#ffffff" }} /> : "Cadastrar Empresa"}
+              </Button>
+
+              <Button
+                variant="outlined"
+                onClick={() => signIn("google")}
+                disabled={loading}
+                fullWidth
+                sx={{
+                  mt: 0.5,
+                  borderRadius: 3,
+                  py: 1.5,
+                  fontWeight: 700,
+                  color: "#2A3543",
+                  borderColor: "rgba(227, 207, 192, 0.8)",
+                  display: "flex",
+                  gap: 1.5,
+                  "&:hover": {
+                    background: "rgba(227, 207, 192, 0.1)",
+                    borderColor: "#4A85B6",
+                  }
+                }}
+              >
+                <img src="https://authjs.dev/img/providers/google.svg" alt="Google" style={{ width: 20, height: 20 }} />
+                Cadastrar com Google
               </Button>
 
               <Typography

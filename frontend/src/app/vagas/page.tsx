@@ -548,22 +548,7 @@ export default function VagasPage() {
         )}
       </Container>
 
-      {/* Footer */}
-      <Box
-        component="footer"
-        sx={{
-          py: 4,
-          borderTop: "1px solid rgba(227, 207, 192, 0.4)",
-          background: "rgba(250, 246, 240, 0.9)",
-          mt: "auto",
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-            Plataforma de Vagas de Emprego — Jacareí, SP · Projeto de Extensão Universitária
-          </Typography>
-        </Container>
-      </Box>
+
     </Box>
   );
 }

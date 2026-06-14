@@ -372,8 +372,10 @@ class JobCandidacyAPIView(APIView):
             recipient_email = job.ref_email or job.company.email
             if recipient_email:
                 try:
+                    from django.core.mail import EmailMultiAlternatives
+
                     subject = f"[Emprega Jacareí] Nova Candidatura - {job.title}"
-                    body = (
+                    text_content = (
                         f"Olá,\n\n"
                         f"Uma nova candidatura foi enviada para a vaga '{job.title}'.\n\n"
                         f"Dados do Candidato:\n"
@@ -385,14 +387,40 @@ class JobCandidacyAPIView(APIView):
                         f"Plataforma Emprega Jacareí"
                     )
 
-                    email = EmailMessage(
+                    html_content = f"""
+                    <html>
+                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                        <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                          <div style="background-color: #4A85B6; padding: 20px; text-align: center;">
+                            <h2 style="color: #fff; margin: 0;">Nova Candidatura Recebida!</h2>
+                          </div>
+                          <div style="padding: 20px; background-color: #f9f9f9;">
+                            <p>Olá,</p>
+                            <p>Você recebeu uma nova candidatura para a vaga <strong>{job.title}</strong>.</p>
+                            <div style="background: #fff; padding: 15px; border-left: 4px solid #4A85B6; border-radius: 4px; margin: 20px 0;">
+                              <h3 style="margin-top: 0; color: #2A3543;">Dados do Candidato</h3>
+                              <p><strong>Nome:</strong> {candidacy.full_name}</p>
+                              <p><strong>E-mail:</strong> <a href="mailto:{candidacy.email}" style="color: #4A85B6;">{candidacy.email}</a></p>
+                              <p><strong>Telefone:</strong> {candidacy.phone}</p>
+                            </div>
+                            <p>O currículo do candidato está anexado a este e-mail.</p>
+                          </div>
+                          <div style="background-color: #eee; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+                            <p style="margin: 0;">PAT Jacareí &middot; Plataforma Emprega Jacareí</p>
+                          </div>
+                        </div>
+                      </body>
+                    </html>
+                    """
+
+                    from django.conf import settings
+                    email_msg = EmailMultiAlternatives(
                         subject=subject,
-                        body=body,
-                        from_email=config(
-                            "DEFAULT_FROM_EMAIL", default="noreply@jacarei.sp.gov.br"
-                        ),
+                        body=text_content,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
                         to=[recipient_email],
                     )
+                    email_msg.attach_alternative(html_content, "text/html")
 
                     # Anexa o currículo
                     if candidacy.resume:
@@ -403,9 +431,9 @@ class JobCandidacyAPIView(APIView):
                         content_type, _ = mimetypes.guess_type(filename)
                         if not content_type:
                             content_type = "application/octet-stream"
-                        email.attach(filename, candidacy.resume.read(), content_type)
+                        email_msg.attach(filename, candidacy.resume.read(), content_type)
 
-                    email.send(fail_silently=False)
+                    email_msg.send(fail_silently=False)
                 except Exception as mail_err:
                     # Logamos o erro de e-mail mas retornamos 201
                     print(f"Erro ao enviar e-mail de candidatura: {str(mail_err)}")

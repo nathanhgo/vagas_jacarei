@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   keywords: ["vagas", "emprego", "Jacareí", "São Paulo", "trabalho", "oportunidades"],
 };
 
+import GlobalFooter from "@/components/GlobalFooter";
+import NextAuthProvider from "@/components/NextAuthProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -15,8 +18,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body suppressHydrationWarning>
-        <MuiProvider>{children}</MuiProvider>
+      <body suppressHydrationWarning style={{ display: "flex", flexDirection: "column", minHeight: "100vh", margin: 0 }}>
+        <NextAuthProvider>
+          <MuiProvider>
+            {children}
+            <GlobalFooter />
+          </MuiProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );

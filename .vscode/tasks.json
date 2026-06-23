@@ -224,6 +224,19 @@
       },
       "problemMatcher": [],
       "detail": "Exibe os logs em tempo real do container backend"
+    },
+    {
+      "label": "🔥 Run Load Test (Locust)",
+      "type": "shell",
+      "command": "python run_load_test.py",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "performance"
+      },
+      "problemMatcher": [],
+      "detail": "Executa teste de Carga/Estresse e gera relatório HTML elegante com gráficos para apresentação"
     }
   ]
 }

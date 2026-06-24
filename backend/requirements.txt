@@ -28,3 +28,5 @@ ruff==0.11.9
 # Testing
 pytest==8.3.5
 pytest-django==4.10.0
+locust==2.31.0
+

@@ -226,6 +226,32 @@
       "detail": "Executa os testes unitários utilizando a ferramenta Pytest"
     },
     {
+      "label": "🧪 Run Selenium Test",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/test_selenium.py",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa o teste Selenium de integração no backend"
+    },
+    {
+      "label": "🧪 Run Playwright UAT Test",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/test_playwright_uat.py",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa o teste UAT Playwright no backend"
+    },
+    {
       "label": "🧪 Run Unit Tests (unittest)",
       "type": "shell",
       "command": "docker compose exec backend python manage.py test tests.unit.test_unittest_example",

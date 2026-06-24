@@ -223,7 +223,20 @@
         "group": "tests"
       },
       "problemMatcher": [],
-      "detail": "Executa especificamente os testes unitários da nova estrutura"
+      "detail": "Executa os testes unitários utilizando a ferramenta Pytest"
+    },
+    {
+      "label": "🧪 Run Unit Tests (unittest)",
+      "type": "shell",
+      "command": "docker compose exec backend python manage.py test tests.unit.test_unittest_example",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa os testes unitários utilizando a ferramenta nativa Unittest (cumpre requisito de 2 ferramentas)"
     },
     {
       "label": "👾 Run Mutation Tests (mutmut)",

@@ -16,7 +16,6 @@ import Chip from "@mui/material/Chip";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
-import ListItemText from "@mui/material/ListItemText";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Tooltip from "@mui/material/Tooltip";
@@ -474,18 +473,15 @@ export default function JobDetailsManagementPage({ params }: PageProps) {
                           {initials}
                         </Avatar>
                       </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#2A3543" }}>
-                            {cand.full_name}
-                          </Typography>
-                        }
-                        secondary={
-                          <Box sx={{ mt: 0.5, display: "flex", flexDirection: "column", gap: 0.5 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
-                                <EmailIcon sx={{ fontSize: 13 }} />
-                                <Link
+                      <Box sx={{ flex: 1, minWidth: 0, ml: 2 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#2A3543" }}>
+                          {cand.full_name}
+                        </Typography>
+                        <Box sx={{ mt: 0.5, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
+                              <EmailIcon sx={{ fontSize: 13 }} />
+                              <Link
                                   href={`mailto:${cand.email}`}
                                   variant="caption"
                                   color="inherit"
@@ -503,10 +499,7 @@ export default function JobDetailsManagementPage({ params }: PageProps) {
                               Candidatou-se em: {applicationDate}
                             </Typography>
                           </Box>
-                        }
-                        // @ts-expect-error - MUI type mismatch for component prop
-                        secondaryTypographyProps={{ component: "div" }}
-                      />
+                        </Box>
                     </ListItem>
                   </Box>
                 );

@@ -37,6 +37,15 @@ htmlcov/
 # Ruff
 .ruff_cache/
 
+# Playwright (Frontend testing)
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# Mutmut (Mutation testing)
+.mutmut-cache
+
 # Django
 staticfiles/
 media/

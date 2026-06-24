@@ -276,6 +276,35 @@
       },
       "problemMatcher": [],
       "detail": "Executa teste de desempenho alternativo utilizando k6 via Docker"
+    },
+    {
+      "label": "🧪 Run Frontend Integration Tests (Playwright)",
+      "type": "shell",
+      "command": "npm run test:integration",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa a suíte de testes de integração do frontend usando Playwright"
+    },
+    {
+      "label": "🧪 Run Backend Integration Tests (pytest)",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/integration/",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa especificamente os testes de integração e mocks do backend"
     }
   ],
   "inputs": [

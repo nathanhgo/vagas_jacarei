@@ -39,9 +39,15 @@ class TestJobService:
     
     # TÉCNICA FUNCIONAL: VALOR LIMITE
     @pytest.mark.parametrize("salary_val, expected", [
+        (Decimal('0.00'), False),
+        (Decimal('100.00'), False),
+        (Decimal('1000.00'), False),
         (Decimal('1411.99'), False), # Abaixo do limite exato
         (Decimal('1412.00'), True),  # No limite exato
         (Decimal('1412.01'), True),  # Acima do limite exato
+        (Decimal('2000.00'), True),
+        (Decimal('5000.00'), True),
+        (Decimal('10000.00'), True),
     ])
     def test_boundary_value_salary(self, company, salary_val, expected):
         """
@@ -54,9 +60,14 @@ class TestJobService:
         assert JobService.can_be_published(job) is expected
 
     @pytest.mark.parametrize("quantity_val, expected", [
+        (-10, False),
+        (-1, False),
         (0, False), # Limite inferior inválido
         (1, True),  # Limite exato válido
         (2, True),  # Limite superior válido
+        (5, True),
+        (10, True),
+        (100, True),
     ])
     def test_boundary_value_quantity(self, company, quantity_val, expected):
         """

@@ -28,7 +28,9 @@ ruff==0.11.9
 # Testing
 pytest==8.3.5
 pytest-django==4.10.0
+pytest-cov==5.0.0
 locust==2.31.0
 mutmut==3.2.2
+
 
 

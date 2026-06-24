@@ -109,9 +109,9 @@
       "detail": "Inicia o servidor de desenvolvimento Next.js em localhost:3000"
     },
     {
-      "label": "🧪 Run Tests (pytest)",
+      "label": "🧪 Run Unit Tests with Coverage",
       "type": "shell",
-      "command": "docker compose exec backend pytest",
+      "command": "docker compose exec backend pytest tests/unit/ --cov=modules --cov-report=term-missing",
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -119,20 +119,7 @@
         "group": "tests"
       },
       "problemMatcher": [],
-      "detail": "Executa os testes do backend com pytest dentro do container"
-    },
-    {
-      "label": "🧪 Run Tests with Coverage",
-      "type": "shell",
-      "command": "docker compose exec backend pytest --cov=. --cov-report=term-missing",
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "group": "tests"
-      },
-      "problemMatcher": [],
-      "detail": "Executa os testes com relatório de cobertura de código"
+      "detail": "Executa os testes unitários com relatório de cobertura de código"
     },
     {
       "label": "🔍 Ruff Lint",

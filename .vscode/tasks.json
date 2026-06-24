@@ -226,6 +226,32 @@
       "detail": "Exibe os logs em tempo real do container backend"
     },
     {
+      "label": "🧪 Run Unit Tests (pytest)",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/unit/",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa especificamente os testes unitários da nova estrutura"
+    },
+    {
+      "label": "👾 Run Mutation Tests (mutmut)",
+      "type": "shell",
+      "command": "docker compose exec backend mutmut run",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa o mutmut para aplicar Teste de Mutantes (exigência do slide)"
+    },
+    {
       "label": "🔥 Run Performance Test (Locust)",
       "type": "shell",
       "command": "docker compose exec backend python tests/system/performance/run_load_test.py --type ${input:testType}",

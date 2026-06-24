@@ -1,0 +1,18 @@
+{
+    "tests_by_mangled_function_name": {},
+    "duration_by_test": {
+        "tests/unit/test_job_service.py::TestJobService::test_equivalence_classes_salary": 0.0005088799989607651,
+        "tests/unit/test_job_service.py::TestJobService::test_boundary_value_salary[salary_val0-False]": 0.0005502280000655446,
+        "tests/unit/test_job_service.py::TestJobService::test_boundary_value_salary[salary_val1-True]": 0.00045642099939868785,
+        "tests/unit/test_job_service.py::TestJobService::test_boundary_value_salary[salary_val2-True]": 0.00045034899812890217,
+        "tests/unit/test_job_service.py::TestJobService::test_boundary_value_quantity[0-False]": 0.000425983002060093,
+        "tests/unit/test_job_service.py::TestJobService::test_boundary_value_quantity[1-True]": 0.0004408509994391352,
+        "tests/unit/test_job_service.py::TestJobService::test_boundary_value_quantity[2-True]": 0.00044889600030728616,
+        "tests/unit/test_job_service.py::TestJobService::test_path_testing_can_be_published": 0.0004838620006921701,
+        "tests/unit/test_job_service.py::TestJobService::test_data_flow_publish_job": 0.025666403998911846,
+        "tests/unit/test_job_service.py::TestJobService::test_can_candidate_apply_status": 0.0007396860019071028,
+        "tests/unit/test_job_service.py::TestJobService::test_can_candidate_apply_extensions": 0.0005522510000446346,
+        "tests/unit/test_job_service.py::TestJobService::test_data_flow_archive_job": 0.022297698000329547
+    },
+    "stats_time": 0.877047655
+}

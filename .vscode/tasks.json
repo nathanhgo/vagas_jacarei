@@ -226,9 +226,9 @@
       "detail": "Executa os testes unitários utilizando a ferramenta Pytest"
     },
     {
-      "label": "🧪 Run Selenium Test",
+      "label": "🧪 Run Acceptance Tests (Selenium & Playwright)",
       "type": "shell",
-      "command": "docker compose exec backend pytest tests/test_selenium.py",
+      "command": "docker compose exec backend pytest tests/acceptance/",
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -236,20 +236,7 @@
         "group": "tests"
       },
       "problemMatcher": [],
-      "detail": "Executa o teste Selenium de integração no backend"
-    },
-    {
-      "label": "🧪 Run Playwright UAT Test",
-      "type": "shell",
-      "command": "docker compose exec backend pytest tests/test_playwright_uat.py",
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "group": "tests"
-      },
-      "problemMatcher": [],
-      "detail": "Executa o teste UAT Playwright no backend"
+      "detail": "Executa os testes de aceitação (UAT) no backend"
     },
     {
       "label": "🧪 Run Unit Tests (unittest)",
@@ -331,6 +318,19 @@
       },
       "problemMatcher": [],
       "detail": "Executa especificamente os testes de integração e mocks do backend"
+    },
+    {
+      "label": "🏆 Run ALL Tests (Pirâmide Completa)",
+      "dependsOn": [
+        "🧪 Run Unit Tests (pytest)",
+        "🧪 Run Backend Integration Tests (pytest)",
+        "🧪 Run Frontend Integration Tests (Playwright)",
+        "🧪 Run Acceptance Tests (Selenium & Playwright)",
+        "🔥 Run Performance Test (Locust)"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "detail": "Executa de uma só vez a Pirâmide (abre cada suíte em uma nova aba do terminal automaticamente)."
     }
   ],
   "inputs": [

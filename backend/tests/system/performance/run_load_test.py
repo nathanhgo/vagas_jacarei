@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import argparse
+import csv
 
 def check_locust():
     try:
@@ -43,8 +44,7 @@ def run_performance_test(test_type):
     host = "http://localhost:8000"
     
     report_prefix = os.path.join(base_dir, f"report_{test_type}")
-    html_report = f"{report_prefix}.html"
-
+    
     print(f"Iniciando Teste de {test_type.upper()}...")
     print(f"Alvo: {host}")
     print(f"Usuarios Simultaneos: {users}")
@@ -57,14 +57,35 @@ def run_performance_test(test_type):
         "-u", str(users),
         "-r", str(spawn_rate),
         "--run-time", run_time,
-        "--html", html_report,
         "--csv", report_prefix,
         "--host", host
     ]
 
     try:
-        subprocess.run(cmd, capture_output=True, text=True)
-        print(f"\nTeste concluído! Relatorio salvo em: {html_report}")
+        subprocess.run(cmd)
+        
+        # Le o CSV para gerar o resumo customizado
+        csv_file = f"{report_prefix}_stats.csv"
+        if os.path.exists(csv_file):
+            with open(csv_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get("Name") == "Aggregated":
+                        total_reqs = int(row.get("Request Count", 0))
+                        failures = int(row.get("Failure Count", 0))
+                        fail_rate = (failures / total_reqs * 100) if total_reqs > 0 else 0
+                        avg_rt = row.get("Average Response Time", "0")
+                        
+                        print("\n" + "="*45)
+                        print(f"📊 RESUMO DE DESEMPENHO (LOCUST - {test_type.upper()})")
+                        print("="*45)
+                        print(f"🔹 Duração do Teste: {run_time}")
+                        print(f"🔹 Usuários Simultâneos: {users}")
+                        print(f"🔹 Total de Requisições: {total_reqs}")
+                        print(f"🔹 Taxa de Falha: {fail_rate:.2f}% ({failures} falhas)")
+                        print(f"🔹 Tempo Médio de Resposta: {avg_rt} ms")
+                        print("="*45 + "\n")
+                        break
     except KeyboardInterrupt:
         print("\nTeste interrompido.")
     except Exception as e:

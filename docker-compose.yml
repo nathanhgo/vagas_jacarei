@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       # Run on non-default port to avoid conflict with host Postgres
       PGPORT: 5433
-    command: -p 5433
+    command: -p 5433 -c max_connections=1000
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

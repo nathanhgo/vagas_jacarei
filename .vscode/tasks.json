@@ -331,6 +331,19 @@
       "dependsOrder": "sequence",
       "problemMatcher": [],
       "detail": "Executa de uma só vez a Pirâmide (abre cada suíte em uma nova aba do terminal automaticamente)."
+    },
+    {
+      "label": "📊 Show Overall Backend Coverage",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/unit/ tests/integration/ --cov=modules --cov=core --cov-report=term-missing",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa testes unitários e de integração para exibir a cobertura geral do backend"
     }
   ],
   "inputs": [

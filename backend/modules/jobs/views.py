@@ -368,75 +368,108 @@ class JobCandidacyAPIView(APIView):
             from django.db.models import F
             Job.objects.filter(pk=job.id).update(clicks_count=F("clicks_count") + 1)
 
-            # 3. Determina o e-mail de recebimento (ref_email da vaga ou e-mail da empresa)
-            recipient_email = job.ref_email or job.company.email
-            if recipient_email:
-                try:
-                    from django.core.mail import EmailMultiAlternatives
+            # 3. Disparo dos e-mails usando o Google Apps Script
+            try:
+                from django.conf import settings
+                import requests
+                import base64
+                import json
 
-                    subject = f"[Emprega Jacareí] Nova Candidatura - {job.title}"
-                    text_content = (
-                        f"Olá,\n\n"
-                        f"Uma nova candidatura foi enviada para a vaga '{job.title}'.\n\n"
-                        f"Dados do Candidato:\n"
-                        f"- Nome: {candidacy.full_name}\n"
-                        f"- E-mail: {candidacy.email}\n"
-                        f"- Telefone: {candidacy.phone}\n\n"
-                        f"O currículo do candidato está anexado a este e-mail.\n\n"
-                        f"Atenciosamente,\n"
-                        f"Plataforma Emprega Jacareí"
-                    )
-
-                    html_content = f"""
-                    <html>
-                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                        <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-                          <div style="background-color: #4A85B6; padding: 20px; text-align: center;">
-                            <h2 style="color: #fff; margin: 0;">Nova Candidatura Recebida!</h2>
-                          </div>
-                          <div style="padding: 20px; background-color: #f9f9f9;">
-                            <p>Olá,</p>
-                            <p>Você recebeu uma nova candidatura para a vaga <strong>{job.title}</strong>.</p>
-                            <div style="background: #fff; padding: 15px; border-left: 4px solid #4A85B6; border-radius: 4px; margin: 20px 0;">
-                              <h3 style="margin-top: 0; color: #2A3543;">Dados do Candidato</h3>
-                              <p><strong>Nome:</strong> {candidacy.full_name}</p>
-                              <p><strong>E-mail:</strong> <a href="mailto:{candidacy.email}" style="color: #4A85B6;">{candidacy.email}</a></p>
-                              <p><strong>Telefone:</strong> {candidacy.phone}</p>
-                            </div>
-                            <p>O currículo do candidato está anexado a este e-mail.</p>
-                          </div>
-                          <div style="background-color: #eee; padding: 15px; text-align: center; font-size: 12px; color: #777;">
-                            <p style="margin: 0;">PAT Jacareí &middot; Plataforma Emprega Jacareí</p>
-                          </div>
-                        </div>
-                      </body>
-                    </html>
-                    """
-
-                    from django.conf import settings
-                    email_msg = EmailMultiAlternatives(
-                        subject=subject,
-                        body=text_content,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        to=[recipient_email],
-                    )
-                    email_msg.attach_alternative(html_content, "text/html")
-
-                    # Anexa o currículo
+                gas_url = config("GAS_WEB_APP_URL", default="")
+                
+                if gas_url and config("ENABLE_EMAIL_SENDING", default=False, cast=bool):
+                    
+                    # Preparar anexo (se existir)
+                    attachment_b64 = None
+                    attachment_name = None
+                    
                     if candidacy.resume:
-                        import mimetypes
-
                         candidacy.resume.open()
-                        filename = candidacy.resume.name.split("/")[-1]
-                        content_type, _ = mimetypes.guess_type(filename)
-                        if not content_type:
-                            content_type = "application/octet-stream"
-                        email_msg.attach(filename, candidacy.resume.read(), content_type)
+                        attachment_name = candidacy.resume.name.split("/")[-1]
+                        attachment_b64 = base64.b64encode(candidacy.resume.read()).decode('utf-8')
+                    
+                    # ---------------------------------------------------------
+                    # E-mail 1: Para a Empresa (RH)
+                    # ---------------------------------------------------------
+                    recipient_email = job.ref_email or job.company.email
+                    if recipient_email:
+                        company_subject = f"[Emprega Jacareí] Nova Candidatura - {job.title}"
+                        company_html = f"""
+                        <html>
+                          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                              <div style="background-color: #4A85B6; padding: 20px; text-align: center;">
+                                <h2 style="color: #fff; margin: 0;">Nova Candidatura Recebida!</h2>
+                              </div>
+                              <div style="padding: 20px; background-color: #f9f9f9;">
+                                <p>Olá,</p>
+                                <p>Você recebeu uma nova candidatura para a vaga <strong>{job.title}</strong>.</p>
+                                <div style="background: #fff; padding: 15px; border-left: 4px solid #4A85B6; border-radius: 4px; margin: 20px 0;">
+                                  <h3 style="margin-top: 0; color: #2A3543;">Dados do Candidato</h3>
+                                  <p><strong>Nome:</strong> {candidacy.full_name}</p>
+                                  <p><strong>E-mail:</strong> <a href="mailto:{candidacy.email}" style="color: #4A85B6;">{candidacy.email}</a></p>
+                                  <p><strong>Telefone:</strong> {candidacy.phone}</p>
+                                </div>
+                                <p>O currículo do candidato está anexado a este e-mail.</p>
+                              </div>
+                              <div style="background-color: #eee; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+                                <p style="margin: 0;">Gestão &middot; Plataforma Emprega Jacareí</p>
+                              </div>
+                            </div>
+                          </body>
+                        </html>
+                        """
+                        
+                        company_payload = {
+                            "to": recipient_email,
+                            "replyTo": candidacy.email,
+                            "subject": company_subject,
+                            "htmlBody": company_html,
+                            "attachmentName": attachment_name,
+                            "attachmentBase64": attachment_b64
+                        }
+                        
+                        # Dispara em background request
+                        requests.post(gas_url, json=company_payload, timeout=10)
 
-                    email_msg.send(fail_silently=False)
-                except Exception as mail_err:
-                    # Logamos o erro de e-mail mas retornamos 201
-                    print(f"Erro ao enviar e-mail de candidatura: {str(mail_err)}")
+                    # ---------------------------------------------------------
+                    # E-mail 2: Para o Candidato (Confirmação)
+                    # ---------------------------------------------------------
+                    if candidacy.email:
+                        candidate_subject = f"[Emprega Jacareí] Inscrição Confirmada - {job.title}"
+                        candidate_html = f"""
+                        <html>
+                          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                              <div style="background-color: #28a745; padding: 20px; text-align: center;">
+                                <h2 style="color: #fff; margin: 0;">Inscrição Confirmada!</h2>
+                              </div>
+                              <div style="padding: 20px; background-color: #f9f9f9;">
+                                <p>Olá <strong>{candidacy.full_name}</strong>,</p>
+                                <p>Sua candidatura para a vaga <strong>{job.title}</strong> foi enviada com sucesso para a empresa!</p>
+                                <p>O seu currículo já está nas mãos do recrutador. Caso o seu perfil esteja alinhado com a vaga, a empresa entrará em contato através dos dados fornecidos.</p>
+                                <br>
+                                <p>Desejamos muita boa sorte no processo seletivo!</p>
+                              </div>
+                              <div style="background-color: #eee; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+                                <p style="margin: 0;">Gestão &middot; Plataforma Emprega Jacareí</p>
+                              </div>
+                            </div>
+                          </body>
+                        </html>
+                        """
+                        
+                        candidate_payload = {
+                            "to": candidacy.email,
+                            "replyTo": recipient_email or settings.DEFAULT_FROM_EMAIL,
+                            "subject": candidate_subject,
+                            "htmlBody": candidate_html
+                        }
+                        
+                        requests.post(gas_url, json=candidate_payload, timeout=10)
+
+            except Exception as mail_err:
+                print(f"Erro ao enviar e-mail via GAS: {str(mail_err)}")
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 

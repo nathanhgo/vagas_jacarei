@@ -328,7 +328,7 @@ export default function EmpresaLoginPage() {
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480, mx: "auto" }}>
           {authMode === "login"
-            ? "Entre com CNPJ, e-mail e senha para gerenciar suas vagas no PAT Jacareí."
+            ? "Entre com CNPJ, e-mail e senha para gerenciar suas vagas."
             : "Registre sua empresa gratuitamente e publique vagas para candidatos da região."}
         </Typography>
       </Box>

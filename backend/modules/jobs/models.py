@@ -70,6 +70,16 @@ class Job(models.Model):
     class Meta:
         verbose_name = "Vaga"
         verbose_name_plural = "Vagas"
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(type_of_contract="CLT") | models.Q(salary__gte=1412.00),
+                name="clt_salary_min_wage"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="job_quantity_min_one"
+            ),
+        ]
 
     def __str__(self):
         return f"{self.title} - {self.company.name}"

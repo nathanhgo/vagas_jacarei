@@ -109,9 +109,9 @@
       "detail": "Inicia o servidor de desenvolvimento Next.js em localhost:3000"
     },
     {
-      "label": "🧪 Run Tests (pytest)",
+      "label": "🧪 Run Unit Tests with Coverage",
       "type": "shell",
-      "command": "docker compose exec backend pytest",
+      "command": "docker compose exec backend pytest tests/unit/ --cov=modules --cov-report=term-missing",
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -119,20 +119,7 @@
         "group": "tests"
       },
       "problemMatcher": [],
-      "detail": "Executa os testes do backend com pytest dentro do container"
-    },
-    {
-      "label": "🧪 Run Tests with Coverage",
-      "type": "shell",
-      "command": "docker compose exec backend pytest --cov=. --cov-report=term-missing",
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "group": "tests"
-      },
-      "problemMatcher": [],
-      "detail": "Executa os testes com relatório de cobertura de código"
+      "detail": "Executa os testes unitários com relatório de cobertura de código"
     },
     {
       "label": "🔍 Ruff Lint",
@@ -224,6 +211,148 @@
       },
       "problemMatcher": [],
       "detail": "Exibe os logs em tempo real do container backend"
+    },
+    {
+      "label": "🧪 Run Unit Tests (pytest)",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/unit/",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa os testes unitários utilizando a ferramenta Pytest"
+    },
+    {
+      "label": "🧪 Run Acceptance Tests (Selenium & Playwright)",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/acceptance/",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa os testes de aceitação (UAT) no backend"
+    },
+    {
+      "label": "🧪 Run Unit Tests (unittest)",
+      "type": "shell",
+      "command": "docker compose exec backend python manage.py test tests.unit.test_unittest_example",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa os testes unitários utilizando a ferramenta nativa Unittest (cumpre requisito de 2 ferramentas)"
+    },
+    {
+      "label": "👾 Run Mutation Tests (mutmut)",
+      "type": "shell",
+      "command": "docker compose exec backend mutmut run",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa o mutmut para aplicar Teste de Mutantes (exigência do slide)"
+    },
+    {
+      "label": "🔥 Run Performance Test (Locust)",
+      "type": "shell",
+      "command": "docker compose exec backend python tests/system/performance/run_load_test.py --type ${input:testType}",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "performance"
+      },
+      "problemMatcher": [],
+      "detail": "Executa teste de desempenho com Locust dentro do Docker (escolha o tipo)"
+    },
+    {
+      "label": "🚀 Run Performance Test (k6)",
+      "type": "shell",
+      "command": "docker run --rm -i --net host -e BASE_URL=http://localhost:8000 grafana/k6 run - < backend/tests/system/performance/k6_script.js",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "performance"
+      },
+      "problemMatcher": [],
+      "detail": "Executa teste de desempenho alternativo utilizando k6 via Docker"
+    },
+    {
+      "label": "🧪 Run Frontend Integration Tests (Playwright)",
+      "type": "shell",
+      "command": "npm run test:integration",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa a suíte de testes de integração do frontend usando Playwright"
+    },
+    {
+      "label": "🧪 Run Backend Integration Tests (pytest)",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/integration/",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa especificamente os testes de integração e mocks do backend"
+    },
+    {
+      "label": "🏆 Run ALL Tests (Pirâmide Completa)",
+      "dependsOn": [
+        "🧪 Run Unit Tests (pytest)",
+        "🧪 Run Backend Integration Tests (pytest)",
+        "🧪 Run Frontend Integration Tests (Playwright)",
+        "🧪 Run Acceptance Tests (Selenium & Playwright)",
+        "🔥 Run Performance Test (Locust)"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "detail": "Executa de uma só vez a Pirâmide (abre cada suíte em uma nova aba do terminal automaticamente)."
+    },
+    {
+      "label": "📊 Show Overall Backend Coverage",
+      "type": "shell",
+      "command": "docker compose exec backend pytest tests/unit/ tests/integration/ --cov=modules --cov=core --cov-report=term-missing",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests"
+      },
+      "problemMatcher": [],
+      "detail": "Executa testes unitários e de integração para exibir a cobertura geral do backend"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testType",
+      "type": "pickString",
+      "description": "Qual tipo de teste de desempenho executar?",
+      "options": ["carga", "estresse", "capacidade", "resistencia", "volume"],
+      "default": "carga"
     }
   ]
 }
